@@ -26,7 +26,7 @@
   <td align=center><%= file_server.autoscan ? l(:label_scan_auto) : l(:label_scan_manual) %></td>
   <td align=left>
 	<% file_server.projects.order('lft ASC').each do |project| %>
-	  <%= file_server.project_path_name(project) %><br />
+	  <%= project.proj_tree_path %><br />
 	<% end %>
   </td>
   <td class="buttons">

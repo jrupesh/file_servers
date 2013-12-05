@@ -1,3 +1,5 @@
+require 'ftp_fileserver'
+
 Redmine::Plugin.register :file_servers do
   name 'Project Fileservers plugin'
   author 'Rupesh J'
