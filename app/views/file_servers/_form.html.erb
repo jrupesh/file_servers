@@ -1,0 +1,36 @@
+<%= stylesheet_link_tag 'fileserverlayout', plugin: 'file_servers' %>
+<%= error_messages_for 'file_server' %>
+
+<h3><%=l(:label_file_server_settings)%></h3>
+<div class="splitcontentleft">
+  <div class="box tabular">
+
+  <!--[form:file_server]-->
+    <p><%= f.text_field :name, :required => true%></p>
+    <p>
+    <% protocols = FileServer::PROTOCOLS %>
+    <%= f.select :protocol, protocols.keys.sort{|x,y| protocols[x][:order] <=> protocols[y][:order]}.collect{|k|
+      [l(protocols[k][:label]), k]}, :required => true %>
+    </p>
+    <p><%= f.text_field :address, :required => true%></p>
+    <p><%= f.text_field :port%></p>
+    <p><%= f.text_field :root, :required => true%></p>
+    <p><%= f.text_field :login%></p>
+    <p><%= f.password_field :password, :value => !@file_server.new_record? ? '********' : ''%></p>
+    <p><%= f.check_box :autoscan %></p>
+  </div>
+  <%= submit_tag !@file_server.new_record? ? l(:button_save) : l(:button_add) %>
+</div>
+<div class="splitcontentright">
+<% if @projects.any? %>
+  <fieldset class="box" id="file_servers_project_ids">
+    <legend><%= l(:label_project_plural) %></legend>
+    <%= render_project_nested_lists(@projects) do |p|
+      content_tag('label', check_box_tag('file_server[project_ids][]', p.id, @file_server.projects.to_a.include?(p),
+        :id => nil) + ' ' + h(p))
+    end %>
+    <%= hidden_field_tag('file_server[project_ids][]', '', :id => nil) %>
+    <p><%= check_all_links 'file_servers_project_ids' %></p>
+  </fieldset>
+<% end %>
+</div>

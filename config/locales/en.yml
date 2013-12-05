@@ -1,0 +1,23 @@
+# English strings go here for Rails i18n
+en:
+  field_address: Server address
+  field_root: Root directory
+  field_protocol: Protocol
+  field_host: Host
+  field_port: Port
+  field_autoscan: Automatic scan
+
+  label_file_server: File server
+  label_file_server_plural: File servers
+  label_file_server_new: New file server
+  label_file_server_ftp: FTP
+  label_file_server_settings: Settings
+  label_file_server_activation: Activation
+  label_file_server_activate_for: Activate for
+  label_file_server_no_project: This file server is not activated for any project
+  label_file_server_projects: This file server is currently activated for these projects
+  label_file_server_current: current file server
+
+  label_scan_mode: Scan mode 
+  label_scan_auto: Automatic
+  label_scan_manual: Manual

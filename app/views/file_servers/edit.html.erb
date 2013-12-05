@@ -1,0 +1,5 @@
+<%= title [l(:label_file_server_plural), file_servers_path], @file_server.name %>
+
+<%= labelled_form_for @file_server do |f| %>
+<%= render :partial => 'form', :locals => { :f => f } %>
+<% end %>
