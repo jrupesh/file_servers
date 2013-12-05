@@ -1,5 +1,3 @@
-require_dependency 'file_servers_hook'
-
 Redmine::Plugin.register :file_servers do
   name 'Project Fileservers plugin'
   author 'Rupesh J'
