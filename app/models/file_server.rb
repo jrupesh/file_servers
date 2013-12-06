@@ -123,15 +123,6 @@ class FileServer < ActiveRecord::Base
   def decrypted_password
     self.password
   end
-  
-  def project_path_name(p)
-    n = ""
-    begin
-      n = n.blank? ? p.name : p.name + " >> " + n
-      p = p.parent
-    end while p
-    n
-  end
 
 private
 

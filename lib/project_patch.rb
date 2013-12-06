@@ -16,7 +16,7 @@ module ProjectPatch
   module InstanceMethods
 
     def has_file_server?
-      self.file_server.nil?
+      !self.file_server.nil?
     end
 
     def proj_tree_path
