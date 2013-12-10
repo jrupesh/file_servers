@@ -1,6 +1,9 @@
-require 'project_patch'
-require 'attachment_patch'
-require 'attachments_controller_patch'
+require 'file_servers/hooks/issue_hook'
+
+require 'file_servers/patches/issue_patch'
+require 'file_servers/patches/project_patch'
+require 'file_servers/patches/attachment_patch'
+require 'file_servers/patches/attachments_controller_patch'
 
 module Redmine::Acts::Attachable
   module InstanceMethods
@@ -19,7 +22,7 @@ end
 
 ActiveRecord::Base.send(:include, Redmine::Acts::Attachable)
 
-Project.send(:include, ProjectPatch)
-Issue.send(:include, IssuePatch)
-Attachment.send(:include, AttachmentPatch)
-AttachmentsController.send(:include, AttachmentsControllerPatch)
+Project.send(:include, FileServers::Patches::ProjectPatch)
+Issue.send(:include, FileServers::Patches::IssuePatch)
+Attachment.send(:include, FileServers::Patches::AttachmentPatch)
+AttachmentsController.send(:include, FileServers::Patches::AttachmentsControllerPatch)
