@@ -18,6 +18,8 @@ class FileServer < ActiveRecord::Base
   validates_inclusion_of :protocol, :in => PROTOCOLS.keys
 
   require 'net/ftp'
+  require 'stringio'
+
 
   def to_s; self.name end
 
@@ -37,10 +39,11 @@ class FileServer < ActiveRecord::Base
       url += "@" if self.login || (self.password && !public)
       url += self.address
       url += ":" + self.port.to_s unless self.port.nil?
+      url += "/"
     else
-      url = ""
+      url = "/"
     end 
-    url += "/" + self.root + "/"
+    url += self.root + "/" if !self.root.blank?
     url += relative_path
     url
   end
@@ -124,27 +127,50 @@ class FileServer < ActiveRecord::Base
     self.password
   end
 
-private
-
-  def ftp_connection
-    ftp = nil
+  def puttextcontent(content, remotefile)
+    ftp = ftp_connection
+    f = StringIO.new(content)
     begin
-      ftp = Net::FTP.new
+      ftp.storlines("STOR " + remotefile, f)
+    ensure
+      f.close
+    end
+  end
+
+  def move_file_to_dir(source_file_path,target_file_path)
+    ftp = ftp_connection
+    return if ftp.nil?
+
+    ret = false
+    begin
+      ftp.rename(source_file_path,target_file_path)
+      ftp.close
+      ret = true
+    rescue
+    end
+    ret
+  end
+
+  private
+    def ftp_connection
+      ftp = nil
       begin
-        Timeout.timeout(5) do
-          if self.port.nil?
-            ftp.connect self.address
-          else
-            ftp.connect self.address, self.port
+        ftp = Net::FTP.new
+        begin
+          Timeout.timeout(5) do
+            if self.port.nil?
+              ftp.connect self.address
+            else
+              ftp.connect self.address, self.port
+            end
           end
+          ftp.login self.login, self.decrypted_password
+        rescue Timeout::Error => e
+          ftp = nil
         end
-        ftp.login self.login, self.decrypted_password
-      rescue Timeout::Error => e
+      rescue
         ftp = nil
       end
-    rescue
-      ftp = nil
+      ftp
     end
-    ftp
-  end
 end

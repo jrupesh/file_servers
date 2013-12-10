@@ -1,4 +1,5 @@
 require 'ftp_fileserver'
+require 'file_servers/issue_hook'
 
 Redmine::Plugin.register :file_servers do
   name 'Project Fileservers plugin'

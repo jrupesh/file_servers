@@ -14,12 +14,12 @@ module Redmine::Acts::Attachable
       Attachment.set_context(self)
       orig_save_attachments(attachments, author=User.current)
     end
-    
   end
 end
 
 ActiveRecord::Base.send(:include, Redmine::Acts::Attachable)
 
 Project.send(:include, ProjectPatch)
-AttachmentsController.send(:include, AttachmentsControllerPatch)
+Issue.send(:include, IssuePatch)
 Attachment.send(:include, AttachmentPatch)
+AttachmentsController.send(:include, AttachmentsControllerPatch)
