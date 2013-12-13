@@ -1,5 +1,3 @@
-require 'file_servers/hooks/issue_hook'
-
 require 'file_servers/patches/issue_patch'
 require 'file_servers/patches/project_patch'
 require 'file_servers/patches/attachment_patch'

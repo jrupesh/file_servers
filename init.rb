@@ -10,4 +10,6 @@ Redmine::Plugin.register :file_servers do
 
   menu :admin_menu, :file_servers, {:controller => 'file_servers', :action => 'index'},
   		 :caption => :label_file_server_plural, :after => :enumerations
+
+	settings :default => {'empty' => true}, :partial => 'settings/file_server_settings'
 end

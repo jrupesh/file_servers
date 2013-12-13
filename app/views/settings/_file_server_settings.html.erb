@@ -1,0 +1,12 @@
+<p>
+  <label><%= l(:organize_uploaded_files) %></label>
+  <%= check_box_tag 'settings[organize_uploaded_files]', nil, settings['organize_uploaded_files'] %>
+  <br />
+  <em><%= l(:organize_ftp_uploaded_files) %></em>
+</p>
+<p>
+  <label><%= l(:organize_uploaded_issue_files) %></label>
+  <%= check_box_tag 'settings[organize_uploaded_issue_files]', nil, settings['organize_uploaded_issue_files'] %>
+  <br />
+  <em><%= l(:organize_uploaded_issue_files_desc) %></em>
+</p>
