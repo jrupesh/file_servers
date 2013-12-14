@@ -20,6 +20,13 @@ class FileServer < ActiveRecord::Base
   require 'net/ftp'
   require 'stringio'
 
+  def initialize(attributes=nil, *args)
+    super
+    if new_record?
+      # set default values for new records only
+      self.protocol ||= PROTOCOLS.keys[0]
+    end
+  end
 
   def to_s; self.name end
 

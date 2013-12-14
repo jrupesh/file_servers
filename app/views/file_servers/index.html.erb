@@ -20,7 +20,7 @@
   <tr class="<%= cycle("odd", "even") %>">
   <td align=center><%= link_to file_server.name, :action => 'edit', :id => file_server %></td>
   <td align=center><%= h file_server.address %><%= ":" + file_server.port.to_s unless file_server.port.nil? %></td>
-  <td align=center><%= l(FileServer::PROTOCOLS[file_server.protocol][:label]) %></td>
+  <td align=center><%= h file_server.type_label %></td>
   <td align=center><%= h file_server.login %></td>
   <td align=center><%= h file_server.root %></td>
   <td align=center><%= file_server.autoscan ? l(:label_scan_auto) : l(:label_scan_manual) %></td>

@@ -1,0 +1,20 @@
+--- 
+ftp_server_001:
+  name: "TestServer1"
+  address: "127.0.0.1"
+  id: 1
+  login: "testlogin"
+  password: "testlogin"
+ftp_server_002:
+  name: "TestServer2"
+  address: "127.0.0.2"
+  id: 2
+  login: "testlogin"
+  password: "testlogin"
+ftp_server_003:
+  name: "TestServer3"
+  address: "127.0.0.3"
+  id: 3
+  login: "testlogin"
+  password: "testlogin"
+
