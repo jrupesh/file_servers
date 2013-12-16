@@ -158,6 +158,20 @@ class FileServer < ActiveRecord::Base
     ret
   end
 
+  def ftp_file_exists?(file_directory, filename)
+    ftp = ftp_connection
+    return if ftp.nil?
+
+    ret = false
+    begin
+      ftp.chdir(file_directory)
+      ret = true if not ftp.nlst(filename).empty?
+      ftp.close
+    rescue
+    end
+    ret
+  end
+
   private
     def ftp_connection
       ftp = nil

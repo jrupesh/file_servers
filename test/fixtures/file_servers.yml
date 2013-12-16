@@ -3,8 +3,8 @@ ftp_server_001:
   name: "TestServer1"
   address: "127.0.0.1"
   id: 1
-  login: "testlogin"
-  password: "testlogin"
+  login: "redmine"
+  password: "redmine"
 ftp_server_002:
   name: "TestServer2"
   address: "127.0.0.2"

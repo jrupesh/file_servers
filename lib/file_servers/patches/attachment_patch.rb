@@ -21,6 +21,7 @@ module FileServers
 
           # before_update    :update_disk_directory
           after_update     :organize_ftp_files
+          after_save       :organize_ftp_files
           # after_update     lambda { organize_ftp_files }, :unless => :skip_callbacks
 
           # attr_accessible  :context, :project
@@ -80,11 +81,19 @@ module FileServers
           # context = self.container || self.class.get_context
           # project = context.is_a?(Hash) ? Project.find(context[:project]) : context.project if !context.nil?
           project = get_project
+          # puts
+          # puts "---- Project #{project} ------"
+          # puts "Setting #{Setting.plugin_file_servers["organize_uploaded_files"]}"
+
+          # puts "Project has file server -- #{project.has_file_server?}" if !project.nil?
+
+          # puts "Temp file -- #{@temp_file}"
+
           if !project.nil? && project.has_file_server? && Setting.plugin_file_servers["organize_uploaded_files"] == "on" && 
             @temp_file && (@temp_file.size > 0)
 
             # self.disk_filename = Attachment.disk_filename(filename) if disk_filename.blank?
-            logger.debug("Uploading to #{disk_filename} --- #{self.disk_filename}")
+            # logger.debug("files_to_final_location_with_ftp to #{ftp_file_path}")
             content = @temp_file.respond_to?(:read) ? @temp_file.read : @temp_file
 
             project.file_server.puttextcontent(content, ftp_file_path)
@@ -107,8 +116,8 @@ module FileServers
           # project = context.is_a?(Hash) ? Project.find(context[:project]) : context.project if !context.nil?
           project = get_project
           if !project.nil? && project.has_file_server?
-            logger.debug "[redmine_ftp_attachments] Deleting #{ftp_filename}"
-            project.file_server.delete_file(ftp_file_path, ftp_filename)
+            logger.debug "[redmine_ftp_attachments] Deleting #{self.disk_directory}/#{ftp_filename}"
+            project.file_server.delete_file(self.disk_directory, ftp_filename)
           end
         end
 
@@ -146,7 +155,7 @@ module FileServers
             path = project.file_server.url_for(path.compact.join('/'),false)
             project.file_server.make_directory path
           end
-
+          logger.debug "[ftp_relative_path] path #{path}"
           self.disk_directory = path
         end
 
@@ -162,9 +171,22 @@ module FileServers
           # project = context.is_a?(Hash) ? Project.find(context[:project]) : context.project if !context.nil?
           project = get_project
           if !project.nil? && context.class.name == "Issue" && project.has_file_server?
-            context.move_to_alien_files_folder(ftp_relative_path,ftp_filename)
-            Attachment.update_all({:disk_directory => context.alien_files_folder_url(false)},
+            path = context.alien_files_folder_url(false)
+            logger.debug("FTP path #{path} ---")
+            if disk_filename.present? && File.exist?(diskfile)
+              #If file exists in the local path then move to ftp.
+              #This happens when calling through API.
+              logger.debug("FTP Uploading to #{disk_filename} --- #{diskfile}")
+              context.project.file_server.upload_file diskfile, path, ftp_filename
+              File.delete(diskfile)
+            else
+              logger.debug("FTP moving to #{ftp_relative_path} --- #{path}/#{ftp_filename}")
+              context.move_to_alien_files_folder(ftp_relative_path,path,ftp_filename)
+            end
+
+            Attachment.update_all({:disk_directory => path},
                                   {:id => self.id})
+            self.disk_directory = path
           end
         end
 
@@ -186,10 +208,14 @@ module FileServers
             if !@context.nil?
               if @context.is_a?(Hash)
                 @project = Project.find(@context[:project]) if (@context.has_key?(:project) && !@context[:project].nil?)
+              elsif @context.respond_to?(:project)
+                # puts "Context --- #{@context.class.name}"                
+                @project = @context.project
               else
-                @project = @context.project if @context.respond_to?(:project)
+                @project = @context if @context.class.name == "Project"
               end
             end
+            # puts "Context Project --- #{@project}"            
             @project
           end
       end

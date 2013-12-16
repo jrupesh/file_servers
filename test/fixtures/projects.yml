@@ -11,3 +11,4 @@ projects_001:
   parent_id: 
   lft: 1
   rgt: 10
+  file_server_id: 1

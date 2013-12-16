@@ -16,7 +16,7 @@ module FileServers
 
       module InstanceMethods
         def build_relative_path
-          puts "This should be initiated only once."
+          # puts "This should be initiated only once."
           # build relative path for self
           i1 = (self.id / 10000).to_i
           i2 = (self.id / 100).to_i
@@ -36,9 +36,9 @@ module FileServers
           self.project.file_server.make_directory folder_path
         end
 
-        def move_to_alien_files_folder(source_file,file_name)
+        def move_to_alien_files_folder(source_file,folder_path,file_name)
           return true unless self.project.has_file_server?
-          folder_path = alien_files_folder_url(false)
+          # folder_path = alien_files_folder_url(false)
           self.project.file_server.make_directory folder_path
           self.project.file_server.move_file_to_dir(source_file, "#{folder_path}/#{file_name}")
           folder_path
