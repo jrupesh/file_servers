@@ -39,20 +39,19 @@ class FileServer < ActiveRecord::Base
   end
 
   def url_for(relative_path,full,public=false)
+    url = []
     if full
-      url  = "ftp://"
-      url += self.login if self.login
-      url += ":" + self.password if self.password && !public
-      url += "@" if self.login || (self.password && !public)
-      url += self.address
-      url += ":" + self.port.to_s unless self.port.nil?
-      url += "/"
-    else
-      url = "/"
+      url << "ftp:/"
+      url << self.login if self.login
+      url << ":" + self.password if self.password && !public
+      url << "@" if self.login || (self.password && !public)
+      url << self.address
+      url << ":" + self.port.to_s unless self.port.nil?
+      # url << nil
     end 
-    url += self.root + "/" if !self.root.blank?
-    url += relative_path
-    url
+    url << self.root if !self.root.blank?
+    url << relative_path
+    url.compact.join('/')
   end
 
   def make_directory(path)
@@ -136,12 +135,17 @@ class FileServer < ActiveRecord::Base
 
   def puttextcontent(content, remotefile)
     ftp = ftp_connection
+    return if ftp.nil?
+    ret = false
+
     f = StringIO.new(content)
     begin
       ftp.storlines("STOR " + remotefile, f)
     ensure
       f.close
+      ret = true
     end
+    ret
   end
 
   def move_file_to_dir(source_file_path,target_file_path)

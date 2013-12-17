@@ -67,7 +67,7 @@ module FileServers
               # path = Attachment.ftp_absolute_path(filename, klass, project)
 
               Attachment.set_context :class => klass, :project => project
-
+              logger.debug("Attachment.set_context klass #{klass} project #{project}")
               # Attachment.set_context :class => klass, :project => project, :record => record
               # skip_redirection = true
             end

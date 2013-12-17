@@ -8,7 +8,8 @@ module FileServers
         base.class_eval do
           unloadable
 
-          cattr_accessor(:context_obj) { nil }
+          cattr_accessor   :context_obj
+          # cattr_accessor(:context_obj) { nil }
           # @@context_obj = nil
 
           # cattr_accessor :skip_callbacks
@@ -21,11 +22,11 @@ module FileServers
 
           # before_update    :update_disk_directory
           after_update     :organize_ftp_files
-          after_save       :organize_ftp_files
+          # after_save       :organize_ftp_files
           # after_update     lambda { organize_ftp_files }, :unless => :skip_callbacks
 
           # attr_accessible  :context, :project
-          before_validation  :set_context_default
+          # before_validation  :set_context_default
 
         end
       end
@@ -36,7 +37,12 @@ module FileServers
         end
         
         def get_context
-          @@context_obj
+          begin
+            ctx = @@context_obj
+          rescue
+            ctx = nil
+          end
+          ctx
         end
 
         # determine where the file would be stored without requiring an
@@ -63,9 +69,9 @@ module FileServers
 
       module InstanceMethods
 
-        def set_context_default
-          self.class.set_context(nil)
-        end
+        # def set_context_default
+        #   self.class.set_context(nil)
+        # end
 
         def get_context_class_name
           context = self.container || self.class.get_context
@@ -88,15 +94,16 @@ module FileServers
           # puts "Project has file server -- #{project.has_file_server?}" if !project.nil?
 
           # puts "Temp file -- #{@temp_file}"
+          logger.debug("files_to_final_location_with_ftp Project #{project}")
 
           if !project.nil? && project.has_file_server? && Setting.plugin_file_servers["organize_uploaded_files"] == "on" && 
             @temp_file && (@temp_file.size > 0)
 
             # self.disk_filename = Attachment.disk_filename(filename) if disk_filename.blank?
-            # logger.debug("files_to_final_location_with_ftp to #{ftp_file_path}")
+            logger.debug("files_to_final_location_with_ftp")
             content = @temp_file.respond_to?(:read) ? @temp_file.read : @temp_file
 
-            project.file_server.puttextcontent(content, ftp_file_path)
+            ret = project.file_server.puttextcontent(content, ftp_file_path)
 
             md5 = Digest::MD5.new
             md5.update(content)
@@ -104,10 +111,9 @@ module FileServers
 
             # set the temp file to nil so the model's original after_save block 
             # skips writing to the filesystem
-            @temp_file = nil
-          else
-            files_to_final_location_without_ftp
+            @temp_file = nil if ret
           end
+          files_to_final_location_without_ftp
           # puts "Temp file after ftp --- #{@temp_file}"
         end
 
@@ -190,6 +196,15 @@ module FileServers
           end
         end
 
+        def ftpdiskfile
+          File.join(disk_directory.to_s, disk_filename.to_s)
+        end
+
+        def ftpfileexists?
+          (self.container && !self.container.nil?) ? context = self.container : return
+          context.project.file_server.ftp_file_exists?(disk_directory.to_s, disk_filename.to_s)
+        end
+
         # def update_disk_directory
         #   (self.container && !self.container.nil?) ? context = self.container : return
         #   if context.class.name == "Issue"
@@ -205,6 +220,7 @@ module FileServers
             return @project if !@project.nil?
             @project = nil
             @context = self.container || self.class.get_context
+            logger.debug("get_project Context nil --- #{@context}")            
             if !@context.nil?
               if @context.is_a?(Hash)
                 @project = Project.find(@context[:project]) if (@context.has_key?(:project) && !@context[:project].nil?)
@@ -216,6 +232,7 @@ module FileServers
               end
             end
             # puts "Context Project --- #{@project}"            
+            logger.debug("get_project Context Project --- #{@project}")
             @project
           end
       end

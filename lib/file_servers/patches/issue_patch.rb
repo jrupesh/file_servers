@@ -27,7 +27,7 @@ module FileServers
 
         def alien_files_folder_url(full,public=false)
           @path.blank? ? @path = build_relative_path : @path
-          self.project.file_server.url_for(@path,full,public) if self.project # Check for console
+          self.project.file_server.url_for(@path,full,public) # if self.project # Check for console
         end
 
         def create_alien_files_folder

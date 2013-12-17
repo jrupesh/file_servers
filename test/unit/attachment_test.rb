@@ -83,14 +83,12 @@ class AttachmentTest < ActiveSupport::TestCase
                        :author => User.find(1))
     assert a.save
     assert_equal 'testfile.txt', a.filename
-    # assert_equal 61, a.filesize
+    assert_equal 61, a.filesize
     assert_equal 'text/plain', a.content_type
     assert_equal 0, a.downloads
     assert_equal '31e3389f8cd52c31351f8984e3c24bbd', a.digest
-    # diskfile = a.diskfile
-    # assert File.exist?(diskfile)
-    # assert_equal 61, File.size(a.diskfile)
+    assert a.ftpfileexists?
     assert a.destroy
-    # assert !File.exist?(diskfile)
+    assert !a.ftpfileexists?
   end
 end
