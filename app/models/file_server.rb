@@ -38,19 +38,21 @@ class FileServer < ActiveRecord::Base
     l(PROTOCOLS[self.protocol][:label])
   end
 
-  def url_for(relative_path,full,public=false)
+  def url_for(relative_path,full,public=false,root_included=false)
     url = []
     if full
-      url << "ftp:/"
-      url << self.login if self.login
-      url << ":" + self.password if self.password && !public
-      url << "@" if self.login || (self.password && !public)
-      url << self.address
-      url << ":" + self.port.to_s unless self.port.nil?
-      # url << nil
+      ftp_credentials = ""
+      ftp_credentials += "ftp://"
+      ftp_credentials += self.login if self.login
+      ftp_credentials += ":" + self.password if self.password && !public
+      ftp_credentials += "@" if self.login || (self.password && !public)
+      ftp_credentials += self.address
+      ftp_credentials += ":" + self.port.to_s unless self.port.nil?
+      url << ftp_credentials
     end 
-    url << self.root if !self.root.blank?
+    url << self.root if (!self.root.blank? && !root_included)
     url << relative_path
+    logger.debug("url_for url -- #{url} ---")
     url.compact.join('/')
   end
 
@@ -151,16 +153,31 @@ class FileServer < ActiveRecord::Base
   def move_file_to_dir(source_file_path,target_file_path)
     ftp = ftp_connection
     return if ftp.nil?
-
     ret = false
     begin
+      logger.debug("move_file_to_dir source_file_path #{source_file_path} --target_file_path - #{target_file_path}")
       ftp.rename(source_file_path,target_file_path)
       ftp.close
       ret = true
     rescue
+      logger.debug("move_file_to_dir ERROR")
     end
     ret
   end
+
+  def readftpFile(ftpremotefile)
+    ftp = ftp_connection
+    return if ftp.nil?
+
+    ret = ""
+    begin
+      ret = ftp.getbinaryfile(ftpremotefile, localfile = nil)
+      ftp.close
+    rescue
+    end
+    ret
+  end
+
 
   def ftp_file_exists?(file_directory, filename)
     ftp = ftp_connection

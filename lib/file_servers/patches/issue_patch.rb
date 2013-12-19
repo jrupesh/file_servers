@@ -27,6 +27,7 @@ module FileServers
 
         def alien_files_folder_url(full,public=false)
           @path.blank? ? @path = build_relative_path : @path
+          logger.debug("alien_files_folder_url @path #{@path} ---")
           self.project.file_server.url_for(@path,full,public) # if self.project # Check for console
         end
 
@@ -39,8 +40,9 @@ module FileServers
         def move_to_alien_files_folder(source_file,folder_path,file_name)
           return true unless self.project.has_file_server?
           # folder_path = alien_files_folder_url(false)
+          logger.debug("move_to_alien_files_folder source_file - #{source_file},folder_path - #{folder_path}, file_name - #{file_name}")
           self.project.file_server.make_directory folder_path
-          self.project.file_server.move_file_to_dir(source_file, "#{folder_path}/#{file_name}")
+          self.project.file_server.move_file_to_dir("#{source_file}/#{file_name}", "#{folder_path}/#{file_name}")
           folder_path
         end
 

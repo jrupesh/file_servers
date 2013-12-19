@@ -13,12 +13,55 @@ module FileServers
 
         base.class_eval do
           unloadable # Send unloadable so it will not be unloaded in development
+          before_filter :ftp_attachment_read, :only => :show          
           before_filter :prepare_attachment_context, :except => :destroy
-          # skip_before_filter :file_readable
+          skip_before_filter :file_readable
         end
       end
 
       module InstanceMethods
+        def ftp_attachment_read
+          logger.error "ftp_attachment_read ------."
+          return if !@attachment.hasfileinftp?
+          logger.error "ftp_attachment_read ------."
+          respond_to do |format|
+            format.html {
+              if @attachment.is_diff?
+                @diff = @attachment.readftpcontent
+                @diff_type = params[:type] || User.current.pref[:diff_type] || 'inline'
+                @diff_type = 'inline' unless %w(inline sbs).include?(@diff_type)
+                # Save diff type as user preference
+                if User.current.logged? && @diff_type != User.current.pref[:diff_type]
+                  User.current.pref[:diff_type] = @diff_type
+                  User.current.preference.save
+                end
+                render :action => 'diff'
+              elsif @attachment.is_text? && @attachment.filesize <= Setting.file_max_size_displayed.to_i.kilobyte
+                @content = @attachment.readftpcontent
+                render :action => 'file'
+              else
+                ftpdownload
+              end
+            }
+            format.api
+          end
+        end
+
+        def ftpdownload
+          if @attachment.container.is_a?(Version) || @attachment.container.is_a?(Project)
+            @attachment.increment_download
+          end
+
+          if stale?(:etag => @attachment.digest)
+            # images are sent inline
+            url = @attachment.container.project.file_server.url_for(@attachment.disk_directory,
+                    true ,public=false,root_included=true) + "/" + @attachment.disk_filename
+
+            send_file url,  :filename => filename_for_content_disposition(@attachment.filename),
+                            :type => detect_content_type(@attachment),
+                            :disposition => (@attachment.image? ? 'inline' : 'attachment')
+          end
+        end        
       end
 
       module Redmine23AndNewer

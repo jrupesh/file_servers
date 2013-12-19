@@ -100,11 +100,8 @@ module FileServers
             @temp_file && (@temp_file.size > 0)
 
             # self.disk_filename = Attachment.disk_filename(filename) if disk_filename.blank?
-            logger.debug("files_to_final_location_with_ftp")
             content = @temp_file.respond_to?(:read) ? @temp_file.read : @temp_file
-
             ret = project.file_server.puttextcontent(content, ftp_file_path)
-
             md5 = Digest::MD5.new
             md5.update(content)
             self.digest = md5.hexdigest
@@ -112,6 +109,7 @@ module FileServers
             # set the temp file to nil so the model's original after_save block 
             # skips writing to the filesystem
             @temp_file = nil if ret
+            # self.disk_directory = ftp_relative_path
           end
           files_to_final_location_without_ftp
           # puts "Temp file after ftp --- #{@temp_file}"
@@ -128,11 +126,12 @@ module FileServers
         end
 
         def ftp_filename
+          # logger.debug("ftp_file_path -- 01 disk_directory -- #{self.disk_directory}")
           if self.new_record?
             timestamp = DateTime.now.strftime("%y%m%d%H%M%S")
             self.disk_filename = "#{timestamp}_#{filename}"
           end
-
+          # logger.debug("ftp_file_path -- 02 disk_directory -- #{self.disk_directory}")
           self.disk_filename.blank? ? filename : self.disk_filename
         end
 
@@ -155,43 +154,55 @@ module FileServers
           end
           
           path << pid
-          path << ctx
+          path << ctx if !ctx.nil?
 
           if !project.nil? && project.has_file_server?
             path = project.file_server.url_for(path.compact.join('/'),false)
+            logger.debug("ftp_relative_path -- make_directory path -- #{path}")
             project.file_server.make_directory path
           end
           logger.debug "[ftp_relative_path] path #{path}"
           self.disk_directory = path
+          self.disk_directory
         end
 
-        def ftp_file_path(fn = ftp_filename, ctx = nil, pid = nil)
-          path = ftp_relative_path(ctx, pid)
-          path << "/"
-          path << fn
-          path
+        def ftp_file_path(ftpn = ftp_filename, ctx = nil, pid = nil)
+          ftpdirpath = ftp_relative_path(ctx, pid)
+          ftpfilepath = ""
+          ftpfilepath << ftpdirpath
+          ftpfilepath << "/"
+          # logger.debug("ftp_file_path -- 1 disk_directory -- #{self.disk_directory}")
+          ftpfilepath << ftpn
+          # logger.debug("ftp_file_path -- 2 disk_directory -- #{self.disk_directory}")
+          # self.disk_directory = ftpdirpath
+          # logger.debug("ftp_file_path -- 3 disk_directory -- #{self.disk_directory}")
+          ftpfilepath
         end
 
         def organize_ftp_files
           (self.container && !self.container.nil?) ? context = self.container : return
           # project = context.is_a?(Hash) ? Project.find(context[:project]) : context.project if !context.nil?
           project = get_project
-          if !project.nil? && context.class.name == "Issue" && project.has_file_server?
-            path = context.alien_files_folder_url(false)
-            logger.debug("FTP path #{path} ---")
-            if disk_filename.present? && File.exist?(diskfile)
-              #If file exists in the local path then move to ftp.
-              #This happens when calling through API.
-              logger.debug("FTP Uploading to #{disk_filename} --- #{diskfile}")
-              context.project.file_server.upload_file diskfile, path, ftp_filename
-              File.delete(diskfile)
+          if !project.nil? && project.has_file_server?
+            if context.class.name == "Issue" 
+              path = context.alien_files_folder_url(false)
+              logger.debug("organize_ftp_files FTP path #{path} ---")
+              if disk_filename.present? && File.exist?(diskfile)
+                #If file exists in the local path then move to ftp.
+                #This happens when calling through API.
+                logger.debug("organize_ftp_files FTP Uploading to #{disk_filename} --- #{diskfile}")
+                context.project.file_server.upload_file diskfile, path, ftp_filename
+                File.delete(diskfile)
+              else
+                logger.debug("organize_ftp_files FTP moving to #{ftp_relative_path}/#{ftp_filename} --- #{path}/#{ftp_filename}")
+                context.move_to_alien_files_folder(ftp_relative_path,path,ftp_filename)
+              end
             else
-              logger.debug("FTP moving to #{ftp_relative_path} --- #{path}/#{ftp_filename}")
-              context.move_to_alien_files_folder(ftp_relative_path,path,ftp_filename)
+              logger.debug("organize_ftp_files Setting path #{ftp_relative_path} --- #{path}/#{ftp_filename}")
+              path = ftp_relative_path
             end
-
             Attachment.update_all({:disk_directory => path},
-                                  {:id => self.id})
+                                  {:id => self.id})          
             self.disk_directory = path
           end
         end
@@ -205,6 +216,16 @@ module FileServers
           context.project.file_server.ftp_file_exists?(disk_directory.to_s, disk_filename.to_s)
         end
 
+        def hasfileinftp?
+          project = get_project
+          return false if project.nil? && !project.has_file_server?
+          true
+        end
+
+        def readftpcontent
+          (self.container && !self.container.nil?) ? context = self.container : return
+          context.project.file_server.readftpFile("#{disk_directory}/#{disk_filename}")
+        end
         # def update_disk_directory
         #   (self.container && !self.container.nil?) ? context = self.container : return
         #   if context.class.name == "Issue"

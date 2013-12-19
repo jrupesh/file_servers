@@ -91,4 +91,21 @@ class AttachmentTest < ActiveSupport::TestCase
     assert a.destroy
     assert !a.ftpfileexists?
   end
+
+  test "Attach to a document" do
+    doc = Document.new(:project => Project.find(1), :title => 'New document', :category => Enumeration.find_by_name('User documentation'))
+    doc.save
+    a = Attachment.new(:container => doc,
+                       :file => fixture_file_upload("/files/testfile.txt", 'text/plain', true),
+                       :author => User.find(1))
+    assert a.save
+    assert_equal 'testfile.txt', a.filename
+    assert_equal 61, a.filesize
+    assert_equal 'text/plain', a.content_type
+    assert_equal 0, a.downloads
+    assert_equal '31e3389f8cd52c31351f8984e3c24bbd', a.digest
+    assert a.ftpfileexists?
+    assert a.destroy
+    assert !a.ftpfileexists?
+  end
 end
