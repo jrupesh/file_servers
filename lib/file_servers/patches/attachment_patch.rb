@@ -110,6 +110,9 @@ module FileServers
             # skips writing to the filesystem
             @temp_file = nil if ret
             # self.disk_directory = ftp_relative_path
+            if content_type.blank? && filename.present?
+              self.content_type = Redmine::MimeType.of(filename)
+            end
           end
           files_to_final_location_without_ftp
           # puts "Temp file after ftp --- #{@temp_file}"

@@ -57,9 +57,10 @@ module FileServers
             url = @attachment.container.project.file_server.url_for(@attachment.disk_directory,
                     true ,public=false,root_included=true) + "/" + @attachment.disk_filename
 
-            send_file url,  :filename => filename_for_content_disposition(@attachment.filename),
-                            :type => detect_content_type(@attachment),
-                            :disposition => (@attachment.image? ? 'inline' : 'attachment')
+            # send_file url,  :filename => @attachment.filename,
+            #                 :type => detect_content_type(@attachment),
+            #                 :disposition => (@attachment.image? ? 'inline' : 'attachment')
+            redirect_to url
           end
         end        
       end
