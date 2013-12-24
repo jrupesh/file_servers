@@ -70,11 +70,12 @@ class FileServer < ActiveRecord::Base
     ret
   end
 
-  def scan_directory(path,create_it=false)
+  def scan_directory(path,attched_files,create_it=false)
     ftp = ftp_connection
     return if ftp.nil?
 
-    files = nil
+    # files = nil
+    files = {}
     begin
       if create_it
         begin
@@ -85,7 +86,17 @@ class FileServer < ActiveRecord::Base
       
       ftp.chdir path
       ftp.passive = true
-      files = ftp.nlst
+      # files = ftp.nlst
+
+      remote_files = ftp.nlst
+      remote_files.each do |file|
+        if attched_files.include? file
+          remote_size = ftp.size(file)
+          files[file] = remote_size
+        else
+          files[file] = 0 # Skip getting file size
+        end
+      end
       ftp.close
     rescue
     end

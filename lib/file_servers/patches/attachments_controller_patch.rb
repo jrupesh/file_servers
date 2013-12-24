@@ -21,7 +21,6 @@ module FileServers
 
       module InstanceMethods
         def ftp_attachment_read
-          logger.error "ftp_attachment_read ------."
           return if !@attachment.hasfileinftp?
           logger.error "ftp_attachment_read ------."
           respond_to do |format|

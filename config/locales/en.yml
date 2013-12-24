@@ -26,3 +26,7 @@ en:
   organize_ftp_uploaded_files: Files uploaded are grouped as news- issues- wiki- etc. Enables / Disables the plugin.
   organize_uploaded_issue_files: Group issues based on issue ID.
   organize_uploaded_issue_files_desc: Ex- for tracker ID 1350 - Upload path is /upload/1000-2000/1350/*files.
+
+  attach_files:   Attach Files
+  attach_rescan:  rescan
+  attach_browse:  browse

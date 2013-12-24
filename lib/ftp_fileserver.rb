@@ -4,6 +4,7 @@ require 'file_servers/patches/attachment_patch'
 require 'file_servers/patches/attachments_controller_patch'
 require 'file_servers/patches/application_helper_patch'
 
+require_dependency 'file_servers/patches/issue_file_server_hook_listener'
 
 module Redmine::Acts::Attachable
   module InstanceMethods
