@@ -1,0 +1,12 @@
+<% if @attachments_new && !@attachments_new.empty? %>
+	<% @attachments_new.each do |attachment| %>
+		$('.attachments').append('<%= escape_javascript(render :partial => "attachments/filelinks", :locals => {:attachment => attachment, :options => @options}) %>');
+	<% end %>
+<% end %>
+
+<% if @attachments_deled && !@attachments_deled.empty? %>
+	<% @attachments_deled.each do |attachment| %>
+		//$('#attachments_<%= j attachment.to_s %>').remove();
+		$( "a:contains('<%= j attachment %>'").parent.remove();
+	<% end %>
+<% end %>

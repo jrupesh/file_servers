@@ -56,6 +56,7 @@ module FileServers
           needs_reloading = false
           # att_files = self.attachments.collect{|a| a.filename}
           att_files = self.attachments.collect{|a| a.disk_filename}
+          logger.debug("scan_alien_files ---- att_files - #{att_files}")
 
           begin
             files = self.project.file_server.scan_directory path,att_files,true
@@ -75,20 +76,25 @@ module FileServers
               # new_att.filesize       = 0
               new_att.filesize       = filesize
               # new_att.content_type   = "application/octet-stream"
-              new_att.content_type   = Redmine::MimeType.of(file)
+              new_att.content_type   = Redmine::MimeType.of(file) || "application/octet-stream"
               # new_att.digest         = 0
               md5 = Digest::MD5.new
               new_att.digest         = md5.hexdigest # A dummy digest
               # new_att.author_id      = 0
-              new_att.author        = User.current
+              new_att.author         = User.current
+              new_att.disk_directory = path
               new_att.save
               result[:changed] = true;
               result[:new] << new_att if changelog
             end
 
+            logger.debug("scan_alien_files ---- files - #{files.keys}")
+
             self.attachments.each do |att|
               # if !files.include? att.filename
+              logger.debug("scan_alien_files ---- att - #{att.disk_filename}")
               if !files.keys.include? att.disk_filename
+                logger.debug("scan_alien_files ---- att - #{att.disk_filename}")
                 Attachment.destroy(att)
                 result[:changed] = true;
               end

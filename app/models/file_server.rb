@@ -90,7 +90,7 @@ class FileServer < ActiveRecord::Base
 
       remote_files = ftp.nlst
       remote_files.each do |file|
-        if attched_files.include? file
+        if !attched_files.include? file
           remote_size = ftp.size(file)
           files[file] = remote_size
         else

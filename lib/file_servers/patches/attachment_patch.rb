@@ -111,7 +111,7 @@ module FileServers
             @temp_file = nil if ret
             # self.disk_directory = ftp_relative_path
             if content_type.blank? && filename.present?
-              self.content_type = Redmine::MimeType.of(filename)
+              self.content_type = Redmine::MimeType.of(filename) || "application/octet-stream"
             end
           end
           files_to_final_location_without_ftp
@@ -124,8 +124,9 @@ module FileServers
           project = get_project
           if !project.nil? && project.has_file_server?
             logger.debug "[redmine_ftp_attachments] Deleting #{self.disk_directory}/#{ftp_filename}"
-            project.file_server.delete_file(self.disk_directory, ftp_filename)
+            ret = project.file_server.delete_file(self.disk_directory, ftp_filename)
           end
+          puts 
         end
 
         def ftp_filename
