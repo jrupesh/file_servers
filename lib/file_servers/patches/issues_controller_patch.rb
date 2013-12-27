@@ -10,6 +10,7 @@ module FileServers
           unloadable # Send unloadable so it will not be unloaded in development
           before_filter :find_issue, :only => [:show, :edit, :update, :scan_files]
           before_filter :authorize, :except => [:index, :scan_files]
+          before_filter :show_auto_scan_files, :only => :show
         end
       end
 
@@ -33,7 +34,13 @@ module FileServers
             end
             format.html { redirect_to_referer_or issue_path(@issue) }
           end
-        end 
+        end
+
+        def show_auto_scan_files
+          if @issue.project.file_server && @issue.project.file_server.autoscan
+            @scan_result = @issue.scan_alien_files(false)
+          end
+        end
       end
     end
   end

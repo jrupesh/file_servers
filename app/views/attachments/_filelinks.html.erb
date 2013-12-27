@@ -16,6 +16,6 @@
 <% if options[:author] %>
   <span class="author"><%= h(attachment.author) %>, <%= format_time(attachment.created_on) %></span>
 <% end %>
-<%= " (manually uploaded)" if attachment.author_id == 0 %>
+<%= " (#{l(:manually_uploaded)})" if attachment.author_id == 0 %>
 <%= image_tag('/plugin_assets/file_servers/images/new.png') if @scan_result && @scan_result[:new].include?(attachment) %> 
 </p>

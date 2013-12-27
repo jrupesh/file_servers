@@ -30,3 +30,5 @@ en:
   attach_files:   Attach Files
   attach_rescan:  rescan
   attach_browse:  browse
+
+  manually_uploaded: manually uploaded
