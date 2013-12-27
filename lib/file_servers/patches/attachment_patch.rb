@@ -222,7 +222,7 @@ module FileServers
 
         def hasfileinftp?
           project = get_project
-          return false if project.nil? && !project.has_file_server?
+          return false if project && !project.has_file_server?
           true
         end
 

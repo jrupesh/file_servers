@@ -15,11 +15,26 @@ module FileServers
           unloadable # Send unloadable so it will not be unloaded in development
           before_filter :ftp_attachment_read, :only => :show          
           before_filter :prepare_attachment_context, :except => :destroy
-          skip_before_filter :file_readable
+          # skip_before_filter :file_readable
+          alias_method_chain :file_readable, :ftp
         end
       end
 
       module InstanceMethods
+        def file_readable_with_ftp
+          if @attachment.hasfileinftp?
+            # if @attachment.ftpfileexists?
+            #   return true
+            # else
+            #   logger.error "Cannot send attachment, #{@attachment.diskfile} does not exist or is unreadable."
+            #   render_404
+            # end
+            return true # Skipping the ftp reading.
+          else
+            file_readable_without_ftp
+          end
+        end
+
         def ftp_attachment_read
           return if !@attachment.hasfileinftp?
           logger.error "ftp_attachment_read ------."
@@ -81,7 +96,7 @@ module FileServers
             req = request.env["HTTP_REFERER"]
             if req.nil?
               Attachment.set_context :class => nil, :project => nil
-              Attachment.set_file_attr_accessible
+              # Attachment.set_file_attr_accessible
             else
               ref = req.split("/")
 

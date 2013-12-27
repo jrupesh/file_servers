@@ -20,7 +20,7 @@
 require File.expand_path('../../test_helper', __FILE__)
 
 class AttachmentTest < ActiveSupport::TestCase
-  fixtures :file_servers, :projects, :issues, :attachments
+  fixtures :file_servers, :projects, :issues, :attachments, :users
   
   class MockFile
     attr_reader :original_filename, :content_type, :content, :size
