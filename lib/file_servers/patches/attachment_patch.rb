@@ -230,6 +230,7 @@ module FileServers
           (self.container && !self.container.nil?) ? context = self.container : return
           context.project.file_server.readftpFile("#{disk_directory}/#{disk_filename}")
         end
+        
         # def update_disk_directory
         #   (self.container && !self.container.nil?) ? context = self.container : return
         #   if context.class.name == "Issue"

@@ -6,7 +6,6 @@
 
 <% if @attachments_deled && !@attachments_deled.empty? %>
 	<% @attachments_deled.each do |attachment| %>
-		//$('#attachments_<%= j attachment.to_s %>').remove();
-		$( "a:contains('<%= j attachment %>'").parent.remove();
+		$( "a:contains('<%= j attachment %>')").parent().remove();
 	<% end %>
 <% end %>

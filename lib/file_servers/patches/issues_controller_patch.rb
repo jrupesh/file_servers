@@ -10,7 +10,6 @@ module FileServers
           unloadable # Send unloadable so it will not be unloaded in development
           before_filter :find_issue, :only => [:show, :edit, :update, :scan_files]
           before_filter :authorize, :except => [:index, :scan_files]
-          # before_filter   :scan_files, :only => :show
         end
       end
 
@@ -20,7 +19,6 @@ module FileServers
       module InstanceMethods
         def scan_files
           logger.debug("IssuesControllerPatch ---- scan_files")
-          # if @issue.project.file_server && @issue.project.file_server.autoscan
           respond_to do |format|
             format.js do
               @attachments_old   = @issue.attachments
