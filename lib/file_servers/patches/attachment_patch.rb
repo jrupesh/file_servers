@@ -126,7 +126,7 @@ module FileServers
             logger.debug "[redmine_ftp_attachments] Deleting #{self.disk_directory}/#{ftp_filename}"
             ret = project.file_server.delete_file(self.disk_directory, ftp_filename)
           end
-          puts 
+          # puts 
         end
 
         def ftp_filename

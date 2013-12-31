@@ -1,7 +1,7 @@
 <p>
-	<strong><%= l(:attach_files) %></strong> (
 	<% if @project.has_file_server? %>
+		<strong><%= l(:attach_files) %></strong> (
 		<%= @project.file_server.autoscan ? "" : link_to(l(:attach_rescan), scan_files_issue_path(@issue), :method => :post, :remote => true ) + " / "%>
 		<%= link_to(l(:attach_browse), @issue.alien_files_folder_url(true), :target => "_blank") %>
-	<% end %>)
+	)<% end %>
 </p>
