@@ -19,7 +19,6 @@ module FileServers
 
       module InstanceMethods
         def scan_files
-          logger.debug("IssuesControllerPatch ---- scan_files")
           respond_to do |format|
             format.js do
               @attachments_old   = @issue.attachments
@@ -27,7 +26,6 @@ module FileServers
               @attachments_new   = @issue.attachments - @attachments_old
               @attachments_delob = @attachments_old - @issue.attachments
               @attachments_deled = @attachments_delob.map(&:filename)
-              logger.debug("IssuesControllerPatch ---- scan_files -- Deleted file IDS -- #{@attachments_deled}")
               @options           = {}
               @options.assert_valid_keys(:author, :thumbnails)
               @options = {:deletable => @issue.attachments_deletable?, :author => true}.merge(@options)

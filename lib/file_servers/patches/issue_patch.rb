@@ -16,8 +16,6 @@ module FileServers
 
       module InstanceMethods
         def build_relative_path
-          # puts "This should be initiated only once."
-          # build relative path for self
           i1 = (self.id / 10000).to_i
           i2 = (self.id / 100).to_i
           path  = sprintf("%.5d-%.5d",i1*10000,(i1*10000+9999)) + "/"
@@ -91,10 +89,7 @@ module FileServers
             logger.debug("scan_alien_files ---- files - #{files.keys}")
 
             self.attachments.each do |att|
-              # if !files.include? att.filename
-              logger.debug("scan_alien_files ---- att - #{att.disk_filename}")
               if !files.keys.include? att.disk_filename
-                logger.debug("scan_alien_files ---- att - #{att.disk_filename}")
                 Attachment.destroy(att)
                 result[:changed] = true;
               end

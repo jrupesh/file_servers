@@ -35,9 +35,9 @@ class AttachmentTest < ActiveSupport::TestCase
 
   def setup
     Setting.plugin_file_servers["organize_uploaded_files"] = "on"
-    # p = Project.find(1)
-    # p.file_server = FileServer.find(1)
-    # p.save
+    p = Project.find(1)
+    p.file_server = FileServer.find(1)
+    p.save
   end
 
   test "Attachmnet.attach_files should attach the file" do

@@ -1,6 +1,7 @@
 class FileServer < ActiveRecord::Base
   unloadable
   has_many :projects, :dependent => :nullify
+  has_many :attachment, :dependent => :nullify
   
   PROTOCOL_FTP = 0
   
@@ -153,7 +154,7 @@ class FileServer < ActiveRecord::Base
 
     f = StringIO.new(content)
     begin
-      ftp.storlines("STOR " + remotefile, f)
+      ftp.storbinary("STOR " + remotefile, f, 8192)
     ensure
       f.close
       ret = true

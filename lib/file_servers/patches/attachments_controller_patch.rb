@@ -15,7 +15,6 @@ module FileServers
           unloadable # Send unloadable so it will not be unloaded in development
           before_filter :ftp_attachment_read, :only => :show          
           before_filter :prepare_attachment_context, :except => :destroy
-          # skip_before_filter :file_readable
           alias_method_chain :file_readable, :ftp
         end
       end
