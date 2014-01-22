@@ -14,7 +14,7 @@
     </p>
     <p><%= f.text_field :address, :required => true%></p>
     <p><%= f.text_field :port%></p>
-    <p><%= f.text_field :root, :required => true%></p>
+    <p><%= f.text_field :root %></p>
     <p><%= f.text_field :login%></p>
     <p><%= f.password_field :password, :value => !@file_server.new_record? ? '********' : ''%></p>
     <p><%= f.check_box :autoscan %></p>
