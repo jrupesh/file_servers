@@ -36,7 +36,7 @@ class FileServer < ActiveRecord::Base
   end
 
   def type_label
-    l(PROTOCOLS[self.protocol][:label])
+    l(PROTOCOLS[self.protocol ||= PROTOCOLS.keys[0]][:label])
   end
 
   def url_for(relative_path,full,public=false,root_included=false)
