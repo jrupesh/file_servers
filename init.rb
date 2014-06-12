@@ -9,7 +9,8 @@ Redmine::Plugin.register :file_servers do
   #author_url 'http://example.com/about'
 
   menu :admin_menu, :file_servers, {:controller => 'file_servers', :action => 'index'},
-  		 :caption => :label_file_server_plural, :after => :enumerations
+  		 :caption => :label_file_server_plural, :after => :enumerations, 
+       :html => { :style => 'background-image: url(../plugin_assets/file_servers/images/file_servers.png)' }
 
 	settings :default => {'empty' => true}, :partial => 'settings/file_server_settings'
 end
