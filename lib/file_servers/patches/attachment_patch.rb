@@ -10,6 +10,7 @@ module FileServers
           belongs_to          :file_server
           cattr_accessor      :context_obj
           alias_method_chain  :files_to_final_location, :ftp
+          alias_method_chain  :target_directory, :organize_files
           before_destroy      :delete_from_ftp
           after_update        :organize_ftp_files
         end
@@ -61,11 +62,39 @@ module FileServers
             # set the temp file to nil so the model's original after_save block 
             # skips writing to the filesystem
             @temp_file = nil if ret
-            self.content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
+            
+            content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
+            assign_attributes(:content_type => content_type)
           else
             files_to_final_location_without_ftp
           end
         end
+
+        def target_directory_with_organize_files
+          if Setting.plugin_file_servers["organize_uploaded_files"] == "on"
+            path = get_path_from_context_project
+            path = path.compact.join('/') 
+          else
+            path = target_directory_without_organize_files
+          end
+          logger.debug("FILESERVER : Attachment path #{path}")
+          path
+        end
+
+        def get_path_from_context_project(ctx = nil, pid = nil)
+          path = [nil]
+
+          if ctx.nil? && pid.nil?
+            ctx = get_context_class_name
+            project = get_project
+            pid = project.identifier if !project.nil?
+          end
+
+          path << pid
+          path << ctx if !ctx.nil?
+          path
+        end
+
 
         def delete_from_ftp
           if !self.file_server.nil? && Attachment.where("disk_filename = ? AND id <> ?", disk_filename, id).empty?
@@ -84,15 +113,7 @@ module FileServers
         def ftp_relative_path(ctx = nil, pid = nil)
           return self.disk_directory if !self.disk_directory.blank?
 
-          path = [nil]
-          if ctx.nil? && pid.nil?
-            ctx = get_context_class_name
-            project = get_project
-            pid = project.identifier if !project.nil?
-          end
-          
-          path << pid
-          path << ctx if !ctx.nil?
+          path = get_path_from_context_project(ctx,pid)
 
           if !project.nil? && project.has_file_server?
             path = project.file_server.url_for(path.compact.join('/'),false)
@@ -114,7 +135,8 @@ module FileServers
         def organize_ftp_files
           (self.container && !self.container.nil?) ? context = self.container : return
           project = get_project
-          if !project.nil? && project.has_file_server?
+          return if project.nil?
+          if project.has_file_server?
             if context.class.name == "Issue" 
               path = context.alien_files_folder_url(false)
               if disk_filename.present? && File.exist?(diskfile)
@@ -128,9 +150,23 @@ module FileServers
             else
               path = ftp_relative_path
             end
-            Attachment.update_all({:disk_directory => path},
+            content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
+            Attachment.update_all({:disk_directory => path, :content_type => content_type },
                                   {:id => self.id})          
             self.disk_directory = path
+          elsif Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on" && context.class.name == "Issue" 
+            path = context.build_relative_path
+            if disk_filename.present? && File.exist?(diskfile)
+              dir = File.join(self.class.storage_path, path.to_s )
+              FileUtils.mkdir_p(dir) unless File.directory?(dir)
+              FileUtils.mv(diskfile, dir)
+
+              content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
+
+              Attachment.update_all({:disk_directory => path, :content_type => content_type },
+                                    {:id => self.id})          
+              self.disk_directory = path
+            end
           end
         end
 
