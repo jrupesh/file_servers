@@ -14,6 +14,7 @@ module FileServers
         base.class_eval do
           unloadable # Send unloadable so it will not be unloaded in development
           before_filter :ftp_attachment_read, :only => :show          
+          before_filter :ftpdownload, :only => :download          
           before_filter :prepare_attachment_context, :except => :destroy
           alias_method_chain :file_readable, :ftp
         end
@@ -61,6 +62,7 @@ module FileServers
         end
 
         def ftpdownload
+          return if !@attachment.hasfileinftp?
           if @attachment.container.is_a?(Version) || @attachment.container.is_a?(Project)
             @attachment.increment_download
           end
