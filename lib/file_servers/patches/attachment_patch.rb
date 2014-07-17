@@ -120,6 +120,7 @@ module FileServers
 
         def ftp_relative_path(ctx = nil, pid = nil)
           return self.disk_directory if !self.disk_directory.blank?
+          logger.debug("FILESERVER : ftp_relative_path")
 
           path = get_path_from_context_project(ctx,pid)
 
@@ -132,11 +133,13 @@ module FileServers
         end
 
         def ftp_file_path(ftpn = ftp_filename, ctx = nil, pid = nil)
+          logger.debug("FILESERVER : ftp_file_path")
           ftpdirpath = ftp_relative_path(ctx, pid)
           ftpfilepath = ""
           ftpfilepath << ftpdirpath
           ftpfilepath << "/"
           ftpfilepath << ftpn
+          logger.debug("FILESERVER : ftp_file_path")
           ftpfilepath
         end
 
