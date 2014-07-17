@@ -38,6 +38,7 @@ module FileServers
       module InstanceMethods
 
         def get_context_class_name
+          logger.debug("FILESERVER : Getting Context Name")
           context = self.container || self.class.get_context
           ctx = context.is_a?(Hash) ? context[:class] : context.class.name
           ctx = "Wiki" if ctx == "WikiPage"
@@ -45,6 +46,7 @@ module FileServers
         end
 
         def files_to_final_location_with_ftp
+          logger.debug("FILESERVER : Save files to Final location.")
           project = get_project
 
           if !project.nil? && project.has_file_server? && Setting.plugin_file_servers["organize_uploaded_files"] == "on" && 
@@ -71,6 +73,7 @@ module FileServers
         end
 
         def target_directory_with_organize_files
+          logger.debug("FILESERVER : Get target directory to organize files.")
           if Setting.plugin_file_servers["organize_uploaded_files"] == "on"
             path = get_path_from_context_project
             path = path.compact.join('/') 
@@ -82,6 +85,7 @@ module FileServers
         end
 
         def get_path_from_context_project(ctx = nil, pid = nil)
+          logger.debug("FILESERVER : get_path_from_context_project")
           path = [nil]
 
           if ctx.nil? && pid.nil?
@@ -97,12 +101,14 @@ module FileServers
 
 
         def delete_from_ftp
+          logger.debug("FILESERVER : delete_from_ftp")
           if !self.file_server.nil? && Attachment.where("disk_filename = ? AND id <> ?", disk_filename, id).empty?
             ret = self.file_server.delete_file(self.disk_directory, ftp_filename)
           end
         end
 
         def ftp_filename
+          logger.debug("FILESERVER : ftp_filename")
           if self.new_record?
             timestamp = DateTime.now.strftime("%y%m%d%H%M%S")
             self.disk_filename = "#{timestamp}_#{filename}"
@@ -133,6 +139,7 @@ module FileServers
         end
 
         def organize_ftp_files
+          logger.debug("FILESERVER : organize_ftp_files")
           (self.container && !self.container.nil?) ? context = self.container : return
           project = get_project
           return if project.nil?
