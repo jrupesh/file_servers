@@ -42,6 +42,7 @@ module FileServers
           context = self.container || self.class.get_context
           ctx = context.is_a?(Hash) ? context[:class] : context.class.name
           ctx = "Wiki" if ctx == "WikiPage"
+          logger.debug("FILESERVER : Context #{ctx}")
           ctx
         end
 
@@ -96,6 +97,7 @@ module FileServers
 
           path << pid
           path << ctx if !ctx.nil?
+          logger.debug("FILESERVER : get_path_from_context_project PATH #{path}")
           path
         end
 
