@@ -98,7 +98,7 @@ module FileServers
           path << pid
           path << ctx if !ctx.nil?
           logger.debug("FILESERVER : get_path_from_context_project PATH #{path}")
-          path
+          path.compact.join('/')
         end
 
 
@@ -125,7 +125,7 @@ module FileServers
           path = get_path_from_context_project(ctx,pid)
 
           if !project.nil? && project.has_file_server?
-            path = project.file_server.url_for(path.compact.join('/'),false)
+            path = project.file_server.url_for(path,false)
             project.file_server.make_directory path
           end
           self.disk_directory = path
