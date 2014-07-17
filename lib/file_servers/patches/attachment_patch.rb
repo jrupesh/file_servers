@@ -42,7 +42,6 @@ module FileServers
           context = self.container || self.class.get_context
           ctx = context.is_a?(Hash) ? context[:class] : context.class.name
           ctx = "Wiki" if ctx == "WikiPage"
-          logger.debug("FILESERVER : Context #{ctx}")
           ctx
         end
 
@@ -81,7 +80,6 @@ module FileServers
           else
             path = target_directory_without_organize_files
           end
-          logger.debug("FILESERVER : Attachment path #{path}")
           path
         end
 
@@ -139,7 +137,6 @@ module FileServers
           ftpfilepath << ftpdirpath
           ftpfilepath << "/"
           ftpfilepath << ftpn
-          logger.debug("FILESERVER : ftp_file_path")
           ftpfilepath
         end
 
