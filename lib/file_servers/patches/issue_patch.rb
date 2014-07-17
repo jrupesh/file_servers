@@ -63,7 +63,7 @@ module FileServers
               return result
             end
 
-            # files.each do |file|
+            journal = issue_from.init_journal(User.current) if files.size > 0
             files.each do |file, filesize|
               next if att_files.include? file
               new_att = Attachment.new
@@ -84,7 +84,12 @@ module FileServers
               new_att.save
               result[:changed] = true;
               result[:new] << new_att if changelog
+              
+              journal.details << JournalDetail.new( :property => 'attachment', 
+                                                    :prop_key => new_att.id,
+                                                    :value => new_att.filename) if !journal.nil?
             end
+            journal.save if !journal.nil?
 
             logger.debug("scan_alien_files ---- files - #{files.keys}")
 
