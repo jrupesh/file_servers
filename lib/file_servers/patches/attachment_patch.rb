@@ -16,7 +16,7 @@ module FileServers
           alias_method_chain  :readable?, :ftp
 
           before_destroy      :delete_from_ftp
-          after_update        :organize_ftp_files
+          after_save          :organize_ftp_files
         end
       end
 
@@ -148,14 +148,22 @@ module FileServers
           (self.container && !self.container.nil?) ? context = self.container : return
           project = get_project
           return if project.nil?
+
           if project.has_file_server?
-            if context.class.name == "Issue" 
+            logger.debug("FILESERVER : After save attachment : Project has file server.")
+            f = {}
+            if context.class.name == "Issue"
               path = context.alien_files_folder_url(false)
+
+              logger.debug("FILESERVER : #{disk_filename} : #{diskfile}.")              
+
               if disk_filename.present? && File.exist?(diskfile)
+                logger.debug("FILESERVER : After save attachment : File exists on App Server.")
                 #If file exists in the local path then move to ftp.
                 #This happens when calling through API.
                 context.project.file_server.upload_file diskfile, path, ftp_filename
                 File.delete(diskfile)
+                f = { :file_server_id => project.file_server.id }
               else
                 context.move_to_alien_files_folder(ftp_relative_path,path,ftp_filename)
               end
@@ -163,7 +171,9 @@ module FileServers
               path = ftp_relative_path
             end
             content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
-            Attachment.update_all({:disk_directory => path, :content_type => content_type },
+            
+            update_hash = {:disk_directory => path, :content_type => content_type }.merge(f)
+            Attachment.update_all( update_hash ,
                                   {:id => self.id})          
             self.disk_directory = path
           elsif Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on" && context.class.name == "Issue" 
