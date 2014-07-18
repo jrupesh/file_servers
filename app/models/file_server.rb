@@ -177,13 +177,13 @@ class FileServer < ActiveRecord::Base
     ret
   end
 
-  def readftpFile(ftpremotefile)
+  def readftpFile(ftpremotefile, localfile=nil)
     ftp = ftp_connection
     return if ftp.nil?
 
     ret = ""
     begin
-      ret = ftp.getbinaryfile(ftpremotefile, localfile = nil)
+      ret = ftp.getbinaryfile(ftpremotefile, localfile)
       ftp.close
     rescue
     end

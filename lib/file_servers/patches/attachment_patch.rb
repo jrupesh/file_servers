@@ -9,8 +9,12 @@ module FileServers
           unloadable
           belongs_to          :file_server
           cattr_accessor      :context_obj
+
           alias_method_chain  :files_to_final_location, :ftp
           alias_method_chain  :target_directory, :organize_files
+          alias_method_chain  :thumbnail, :ftp
+          alias_method_chain  :readable?, :ftp
+
           before_destroy      :delete_from_ftp
           after_update        :organize_ftp_files
         end
@@ -76,7 +80,6 @@ module FileServers
           logger.debug("FILESERVER : Get target directory to organize files.")
           if Setting.plugin_file_servers["organize_uploaded_files"] == "on"
             path = get_path_from_context_project
-            path = path.compact.join('/') 
           else
             path = target_directory_without_organize_files
           end
@@ -198,7 +201,33 @@ module FileServers
           (self.file_server.nil?) ? return : fs = self.file_server
           fs.readftpFile("#{disk_directory}/#{disk_filename}")
         end
-        
+   
+        def readable_with_ftp?
+          return readable_without_ftp? if self.file_server.nil?
+          true
+        end
+
+        def thumbnail_with_ftp(options={})
+          if thumbnailable? && !self.file_server.nil?
+            size = options[:size].to_i == 0 ? Setting.thumbnails_size.to_i : options[:size].to_i
+            tfile = File.join(self.class.thumbnails_storage_path, "#{id}_#{digest}_#{size}.thumb")
+            if !File.exists?(tfile)
+              path = File.dirname(self.diskfile)
+              unless File.directory?(path)
+                FileUtils.mkdir_p(path)
+              end              
+              self.file_server.readftpFile("#{disk_directory}/#{disk_filename}", self.diskfile)
+              ret = thumbnail_without_ftp(options)
+              File.delete(self.diskfile) if File.exist?(self.diskfile)
+            else
+              ret = thumbnail_without_ftp(options)
+            end
+          else
+            ret = thumbnail_without_ftp(options)
+          end
+          ret
+        end
+
         private
           def get_project
             return @project if !@project.nil?

@@ -15,6 +15,7 @@ module FileServers
           unloadable # Send unloadable so it will not be unloaded in development
           before_filter :ftp_attachment_read, :only => :show          
           before_filter :ftpdownload, :only => :download          
+          before_filter :ftpthumbnail, :only => :thumbnail
           before_filter :prepare_attachment_context, :except => :destroy
           alias_method_chain :file_readable, :ftp
         end
@@ -76,6 +77,21 @@ module FileServers
             #                 :type => detect_content_type(@attachment),
             #                 :disposition => (@attachment.image? ? 'inline' : 'attachment')
             redirect_to url
+          end
+        end        
+
+        def ftpthumbnail
+          return if !@attachment.hasfileinftp?
+          if @attachment.thumbnailable? && thumbnail = @attachment.thumbnail(:size => params[:size])
+            if stale?(:etag => thumbnail)
+              send_file thumbnail,
+                :filename => filename_for_content_disposition(@attachment.filename),
+                :type => detect_content_type(@attachment),
+                :disposition => 'inline'
+            end
+          else
+            # No thumbnail for the attachment or thumbnail could not be created
+            render :nothing => true, :status => 404
           end
         end        
       end
