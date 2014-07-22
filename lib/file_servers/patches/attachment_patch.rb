@@ -209,7 +209,14 @@ module FileServers
 
         def readftpcontent
           (self.file_server.nil?) ? return : fs = self.file_server
-          fs.readftpFile("#{disk_directory}/#{disk_filename}")
+          data = nil
+          if diskfile && File.exist?(diskfile)
+            data = File.new(diskfile, "rb").read
+          else
+            fs.readftpFile("#{disk_directory}/#{disk_filename}", self.diskfile)
+            data = File.new(diskfile, "rb").read
+          end
+          data
         end
    
         def readable_with_ftp?
@@ -221,14 +228,14 @@ module FileServers
           if thumbnailable? && !self.file_server.nil?
             size = options[:size].to_i == 0 ? Setting.thumbnails_size.to_i : options[:size].to_i
             tfile = File.join(self.class.thumbnails_storage_path, "#{id}_#{digest}_#{size}.thumb")
-            if !File.exists?(tfile)
+            if !File.exists?(tfile) && !File.exist?(self.diskfile)
               path = File.dirname(self.diskfile)
               unless File.directory?(path)
                 FileUtils.mkdir_p(path)
               end              
               self.file_server.readftpFile("#{disk_directory}/#{disk_filename}", self.diskfile)
               ret = thumbnail_without_ftp(options)
-              File.delete(self.diskfile) if File.exist?(self.diskfile)
+              # File.delete(self.diskfile) if File.exist?(self.diskfile)
             else
               ret = thumbnail_without_ftp(options)
             end
