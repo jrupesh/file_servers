@@ -63,7 +63,7 @@ module FileServers
         end
 
         def ftpdownload
-          return if !@attachment.hasfileinftp?
+          return if !@attachment.hasfileinftp? || @attachment.container.nil?
           if @attachment.container.is_a?(Version) || @attachment.container.is_a?(Project)
             @attachment.increment_download
           end
