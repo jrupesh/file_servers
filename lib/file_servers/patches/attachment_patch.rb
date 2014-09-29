@@ -178,10 +178,11 @@ module FileServers
             self.disk_directory = path
           elsif Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on" && context.class.name == "Issue" 
             path = context.build_relative_path
-            if disk_filename.present? && File.exist?(diskfile)
-              dir = File.join(self.class.storage_path, path.to_s )
+            dir = File.join(self.class.storage_path, path.to_s )
+            if disk_filename.present? && File.exist?(diskfile) && dir != File.dirname(self.diskfile)
+              
               FileUtils.mkdir_p(dir) unless File.directory?(dir)
-              FileUtils.mv(diskfile, dir)
+              FileUtils.mv(diskfile, dir) unless diskfile == File.join(dir,disk_filename)
 
               content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
 
