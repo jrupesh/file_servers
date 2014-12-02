@@ -63,14 +63,14 @@ module FileServers
         end
 
         def ftpdownload
-          return if !@attachment.hasfileinftp? || @attachment.container.nil?
-          if @attachment.container.is_a?(Version) || @attachment.container.is_a?(Project)
+          return if !@attachment.hasfileinftp?
+          if !@attachment.container.nil? || @attachment.container.is_a?(Version) || @attachment.container.is_a?(Project)
             @attachment.increment_download
           end
 
-          if stale?(:etag => @attachment.digest)
+          if stale?(:etag => @attachment.digest) 
             # images are sent inline
-            url = @attachment.container.project.file_server.url_for(@attachment.disk_directory,
+            url = @attachment.file_server.ftpurl_for(@attachment.disk_directory,
                     true ,public=false,root_included=true) + "/" + @attachment.disk_filename
 
             # send_file url,  :filename => @attachment.filename,

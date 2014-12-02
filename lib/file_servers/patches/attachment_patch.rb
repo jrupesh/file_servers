@@ -77,12 +77,12 @@ module FileServers
         end
 
         def target_directory_with_organize_files
-          logger.debug("FILESERVER : Get target directory to organize files.")
           if Setting.plugin_file_servers["organize_uploaded_files"] == "on"
             path = get_path_from_context_project
           else
             path = target_directory_without_organize_files
           end
+          logger.debug("FILESERVER : Get target directory to organize files. #{path}")
           path
         end
 
@@ -111,35 +111,36 @@ module FileServers
         end
 
         def ftp_filename
-          logger.debug("FILESERVER : ftp_filename")
           if self.new_record?
             timestamp = DateTime.now.strftime("%y%m%d%H%M%S")
             self.disk_filename = "#{timestamp}_#{filename}"
           end
+          logger.debug("FILESERVER : ftp filename #{self.disk_filename.blank? ? filename : self.disk_filename}")
           self.disk_filename.blank? ? filename : self.disk_filename
         end
 
         def ftp_relative_path(ctx = nil, pid = nil)
           return self.disk_directory if !self.disk_directory.blank?
-          logger.debug("FILESERVER : ftp_relative_path")
 
           path = get_path_from_context_project(ctx,pid)
 
           if !project.nil? && project.has_file_server?
-            path = project.file_server.url_for(path,false)
+            path = project.file_server.ftpurl_for(path,false)
             project.file_server.make_directory path
           end
+
           self.disk_directory = path
+          logger.debug("FILESERVER : ftp relative path #{path} == #{self.disk_directory}")
           self.disk_directory
         end
 
         def ftp_file_path(ftpn = ftp_filename, ctx = nil, pid = nil)
-          logger.debug("FILESERVER : ftp_file_path")
           ftpdirpath = ftp_relative_path(ctx, pid)
           ftpfilepath = ""
           ftpfilepath << ftpdirpath
           ftpfilepath << "/"
           ftpfilepath << ftpn
+          logger.debug("FILESERVER : ftp file path #{ftpfilepath}")
           ftpfilepath
         end
 
@@ -204,6 +205,7 @@ module FileServers
 
         def hasfileinftp?
           project = get_project
+          return true if self.container.nil? && self.file_server.nil?
           return false if project && !project.has_file_server?
           true
         end

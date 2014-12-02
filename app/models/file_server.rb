@@ -39,7 +39,7 @@ class FileServer < ActiveRecord::Base
     l(PROTOCOLS[self.protocol ||= PROTOCOLS.keys[0]][:label])
   end
 
-  def url_for(relative_path,full,public=false,root_included=false)
+  def ftpurl_for(relative_path,full,public=false,root_included=false)
     url = []
     if full
       ftp_credentials = ""
@@ -63,7 +63,13 @@ class FileServer < ActiveRecord::Base
 
     ret = false
     begin
-      ftp.mkdir path
+      path.split("/").each do |d|
+        begin
+          ftp.mkdir d
+        rescue
+        end
+        ftp.chdir d
+      end
       ftp.close
       ret = true
     rescue
@@ -79,9 +85,12 @@ class FileServer < ActiveRecord::Base
     files = {}
     begin
       if create_it
-        begin
-          ftp.mkdir path
-        rescue
+        path.split("/").each do |d|
+          begin
+            ftp.mkdir d
+          rescue
+          end
+          ftp.chdir d
         end
       end
       
@@ -107,13 +116,19 @@ class FileServer < ActiveRecord::Base
   def upload_file(source_file_path, target_directory_path, target_file_name)
     ftp = ftp_connection
     return if ftp.nil?
-
+    logger.debug("upload_file - #{source_file_path} #{target_directory_path}")
     ret = false
     begin
       begin
-        ftp.mkdir target_directory_path
+        target_directory_path.split("/").each do |d|
+          begin
+            ftp.mkdir d
+          rescue
+          end
+          ftp.chdir d
+        end
       rescue
-      end
+      end      
       ftp.chdir target_directory_path
       ftp.passive = true
       ftp.putbinaryfile source_file_path,target_file_name
@@ -148,13 +163,26 @@ class FileServer < ActiveRecord::Base
   end
 
   def puttextcontent(content, remotefile)
+    target_directory_path = File.dirname(remotefile)
+    target_file_name      = File.basename(remotefile)
+    logger.debug("puttextcontent - #{target_directory_path} #{remotefile}")
     ftp = ftp_connection
     return if ftp.nil?
     ret = false
 
     f = StringIO.new(content)
     begin
-      ftp.storbinary("STOR " + remotefile, f, 8192)
+      begin
+          target_directory_path.split("/").each do |d|
+            begin
+              ftp.mkdir d
+            rescue
+            end
+            ftp.chdir d
+          end
+        rescue
+        end
+      ftp.storbinary("STOR " + target_file_name, f, 8192)
     ensure
       f.close
       ret = true
@@ -218,7 +246,9 @@ class FileServer < ActiveRecord::Base
               ftp.connect self.address, self.port
             end
           end
-          ftp.login self.login, self.decrypted_password
+          resp = ftp.login(self.login, self.decrypted_password)
+          logger.debug("ftp_connection - #{resp}")
+          ftp.passive = true
         rescue Timeout::Error => e
           ftp = nil
         end
