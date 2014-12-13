@@ -57,22 +57,26 @@ class FileServer < ActiveRecord::Base
     url.compact.join('/')
   end
 
-  def make_directory(path)
-    ftp = ftp_connection
+  def make_directory(path,ftp=nil)
+    ftp = ftp_connection if ftp.nil?
     return if ftp.nil?
 
     ret = false
     begin
-      path.split("/").each do |d|
-        begin
-          ftp.mkdir d
-        rescue
-        end
-        ftp.chdir d
-      end
-      ftp.close
-      ret = true
+      ftp.chdir path
     rescue
+      begin
+        path.split("/").each do |d|
+          begin
+            ftp.mkdir d
+          rescue
+          end
+          ftp.chdir d
+        end
+        ftp.close
+        ret = true
+      rescue
+      end
     end
     ret
   end
@@ -85,13 +89,7 @@ class FileServer < ActiveRecord::Base
     files = {}
     begin
       if create_it
-        path.split("/").each do |d|
-          begin
-            ftp.mkdir d
-          rescue
-          end
-          ftp.chdir d
-        end
+        make_directory(path,ftp)
       end
       
       ftp.chdir path
@@ -119,16 +117,7 @@ class FileServer < ActiveRecord::Base
     logger.debug("upload_file - #{source_file_path} #{target_directory_path}")
     ret = false
     begin
-      begin
-        target_directory_path.split("/").each do |d|
-          begin
-            ftp.mkdir d
-          rescue
-          end
-          ftp.chdir d
-        end
-      rescue
-      end      
+      make_directory(target_directory_path,ftp)
       ftp.chdir target_directory_path
       ftp.passive = true
       ftp.putbinaryfile source_file_path,target_file_name
@@ -172,16 +161,7 @@ class FileServer < ActiveRecord::Base
 
     f = StringIO.new(content)
     begin
-      begin
-          target_directory_path.split("/").each do |d|
-            begin
-              ftp.mkdir d
-            rescue
-            end
-            ftp.chdir d
-          end
-        rescue
-        end
+      make_directory(target_directory_path,ftp)
       ftp.storbinary("STOR " + target_file_name, f, 8192)
     ensure
       f.close

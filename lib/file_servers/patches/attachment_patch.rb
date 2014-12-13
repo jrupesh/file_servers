@@ -204,8 +204,8 @@ module FileServers
         end
 
         def hasfileinftp?
+          return false if self.container.nil? && self.file_server.nil?
           project = get_project
-          return true if self.container.nil? && self.file_server.nil?
           return false if project && !project.has_file_server?
           true
         end

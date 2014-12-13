@@ -64,6 +64,7 @@ module FileServers
 
         def ftpdownload
           return if !@attachment.hasfileinftp?
+          logger.debug("Attachment has FTP File.")
           if !@attachment.container.nil? || @attachment.container.is_a?(Version) || @attachment.container.is_a?(Project)
             @attachment.increment_download
           end
