@@ -23,10 +23,10 @@ module FileServers
           path += self.id.to_s
         end      
 
-        def alien_files_folder_url(full,public=false)
+        def alien_files_folder_url(full)
           @path.blank? ? @path = build_relative_path : @path
           logger.debug("alien_files_folder_url @path #{@path} ---")
-          self.project.file_server.ftpurl_for(@path,full,public) # if self.project # Check for console
+          self.project.file_server.ftpurl_for(@path,full) # if self.project # Check for console
         end
 
         def create_alien_files_folder

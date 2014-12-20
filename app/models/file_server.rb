@@ -39,14 +39,14 @@ class FileServer < ActiveRecord::Base
     l(PROTOCOLS[self.protocol ||= PROTOCOLS.keys[0]][:label])
   end
 
-  def ftpurl_for(relative_path,full,public=false,root_included=false)
+  def ftpurl_for(relative_path,full,root_included=false)
     url = []
     if full
       ftp_credentials = ""
       ftp_credentials += "ftp://"
       ftp_credentials += self.login if self.login
-      ftp_credentials += ":" + self.password if self.password && !public
-      ftp_credentials += "@" if self.login || (self.password && !public)
+      ftp_credentials += ":" + self.password if self.password && self.is_public
+      ftp_credentials += "@" if self.login || (self.password && self.is_public)
       ftp_credentials += self.address
       ftp_credentials += ":" + self.port.to_s unless self.port.nil?
       url << ftp_credentials

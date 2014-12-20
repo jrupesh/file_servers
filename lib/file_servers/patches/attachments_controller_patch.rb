@@ -72,7 +72,7 @@ module FileServers
           if stale?(:etag => @attachment.digest) 
             # images are sent inline
             url = @attachment.file_server.ftpurl_for(@attachment.disk_directory,
-                    true ,public=false,root_included=true) + "/" + @attachment.disk_filename
+                    true ,root_included=true) + "/" + @attachment.disk_filename
 
             # send_file url,  :filename => @attachment.filename,
             #                 :type => detect_content_type(@attachment),
