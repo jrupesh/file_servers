@@ -96,6 +96,7 @@ module FileServers
             pid = project.identifier if !project.nil?
           end
 
+          path << project.file_server.root if project.file_server && !project.file_server.root.blank?
           path << pid
           path << ctx if !ctx.nil?
           logger.debug("FILESERVER : get_path_from_context_project PATH #{path}")

@@ -57,23 +57,24 @@ class FileServer < ActiveRecord::Base
     url.compact.join('/')
   end
 
-  def make_directory(path,ftp=nil)
+  def make_directory(path,ftp=nil,ftp_close=true)
     ftp = ftp_connection if ftp.nil?
     return if ftp.nil?
-
     ret = false
     begin
+      logger.debug("make_directory Change Directory - #{path}")      
       ftp.chdir path
     rescue
       begin
         path.split("/").each do |d|
+          logger.debug("make_directory create Directory - #{d}")                
           begin
             ftp.mkdir d
           rescue
           end
           ftp.chdir d
         end
-        ftp.close
+        ftp.close if ftp_close
         ret = true
       rescue
       end
@@ -89,7 +90,7 @@ class FileServer < ActiveRecord::Base
     files = {}
     begin
       if create_it
-        make_directory(path,ftp)
+        make_directory(path,ftp,false)
       end
       
       ftp.chdir path
@@ -105,9 +106,9 @@ class FileServer < ActiveRecord::Base
           files[file] = 0 # Skip getting file size
         end
       end
-      ftp.close
     rescue
     end
+    ftp.close    
     files
   end
 
@@ -117,14 +118,14 @@ class FileServer < ActiveRecord::Base
     logger.debug("upload_file - #{source_file_path} #{target_directory_path}")
     ret = false
     begin
-      make_directory(target_directory_path,ftp)
+      make_directory(target_directory_path,ftp,false)
       ftp.chdir target_directory_path
       ftp.passive = true
       ftp.putbinaryfile source_file_path,target_file_name
-      ftp.close
       ret = true
     rescue
     end
+    ftp.close    
     ret
   end
 
@@ -136,10 +137,10 @@ class FileServer < ActiveRecord::Base
     begin
       ftp.chdir file_directory
       ftp.delete file_name
-      ftp.close
       ret = true
     rescue
     end
+    ftp.close    
     ret
   end
 
@@ -161,10 +162,11 @@ class FileServer < ActiveRecord::Base
 
     f = StringIO.new(content)
     begin
-      make_directory(target_directory_path,ftp)
+      make_directory(target_directory_path,ftp,false)
       ftp.storbinary("STOR " + target_file_name, f, 8192)
     ensure
       f.close
+      ftp.close
       ret = true
     end
     ret
@@ -177,11 +179,11 @@ class FileServer < ActiveRecord::Base
     begin
       logger.debug("move_file_to_dir source_file_path #{source_file_path} --target_file_path - #{target_file_path}")
       ftp.rename(source_file_path,target_file_path)
-      ftp.close
       ret = true
     rescue
       logger.debug("move_file_to_dir ERROR")
     end
+    ftp.close    
     ret
   end
 
@@ -192,9 +194,9 @@ class FileServer < ActiveRecord::Base
     ret = ""
     begin
       ret = ftp.getbinaryfile(ftpremotefile, localfile)
-      ftp.close
     rescue
     end
+    ftp.close    
     ret
   end
 
@@ -207,9 +209,9 @@ class FileServer < ActiveRecord::Base
     begin
       ftp.chdir(file_directory)
       ret = true if not ftp.nlst(filename).empty?
-      ftp.close
     rescue
     end
+    ftp.close    
     ret
   end
 
