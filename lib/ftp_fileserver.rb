@@ -7,12 +7,15 @@ require 'file_servers/patches/attachments_controller_patch'
 
 require 'file_servers/patches/application_helper_patch'
 
-require_dependency 'file_servers/hooks/issue_file_server_hook_listener'
+
+ActionDispatch::Callbacks.to_prepare do
+  require_dependency 'file_servers/hooks/issue_file_server_hook_listener'
+end
 
 module Redmine::Acts::Attachable
   module InstanceMethods
     alias_method :orig_save_attachments, :save_attachments
-    
+
     def self.included(base)
       base.extend(ClassMethods)
     end
@@ -24,13 +27,34 @@ module Redmine::Acts::Attachable
   end
 end
 
-ActiveRecord::Base.send(:include, Redmine::Acts::Attachable)
+Rails.configuration.to_prepare do
 
-Project.send(:include, FileServers::Patches::ProjectPatch)
-Issue.send(:include, FileServers::Patches::IssuePatch)
-Attachment.send(:include, FileServers::Patches::AttachmentPatch)
+  unless ActiveRecord::Base.included_modules.include? Redmine::Acts::Attachable
+    ActiveRecord::Base.send(:include, Redmine::Acts::Attachable)
+  end
 
-IssuesController.send(:include, FileServers::Patches::IssuesControllerPatch)
-AttachmentsController.send(:include, FileServers::Patches::AttachmentsControllerPatch)
+  unless Project.included_modules.include? FileServers::Patches::ProjectPatch
+    Project.send(:include, FileServers::Patches::ProjectPatch)
+  end
 
-ApplicationHelper.send(:include, FileServers::Patches::ApplicationHelperPatch)
+  unless Issue.included_modules.include? FileServers::Patches::IssuePatch
+    Issue.send(:include, FileServers::Patches::IssuePatch)
+  end
+
+  unless Attachment.included_modules.include? FileServers::Patches::AttachmentPatch
+    Attachment.send(:include, FileServers::Patches::AttachmentPatch)
+  end
+
+  unless IssuesController.included_modules.include? FileServers::Patches::IssuesControllerPatch
+    IssuesController.send(:include, FileServers::Patches::IssuesControllerPatch)
+  end
+
+  unless AttachmentsController.included_modules.include? FileServers::Patches::AttachmentsControllerPatch
+    AttachmentsController.send(:include, FileServers::Patches::AttachmentsControllerPatch)
+  end
+
+  unless ApplicationHelper.included_modules.include? FileServers::Patches::ApplicationHelperPatch
+    ApplicationHelper.send(:include, FileServers::Patches::ApplicationHelperPatch)
+  end
+
+end

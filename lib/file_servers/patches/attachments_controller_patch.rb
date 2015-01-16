@@ -1,20 +1,20 @@
 module FileServers
   module Patches
     module AttachmentsControllerPatch
-      
+
       def self.included(base) # :nodoc:
-        base.send(:include, InstanceMethods)
 
         if Redmine::VERSION.to_s >= "2.3"
           base.send(:include, Redmine23AndNewer)
         else
           base.send(:include, Redmine22AndOlder)
         end
+        base.send(:include, InstanceMethods)
 
         base.class_eval do
           unloadable # Send unloadable so it will not be unloaded in development
-          before_filter :ftp_attachment_read, :only => :show          
-          before_filter :ftpdownload, :only => :download          
+          before_filter :ftp_attachment_read, :only => :show
+          before_filter :ftpdownload, :only => :download
           before_filter :ftpthumbnail, :only => :thumbnail
           before_filter :prepare_attachment_context, :except => :destroy
           alias_method_chain :file_readable, :ftp
@@ -69,7 +69,7 @@ module FileServers
             @attachment.increment_download
           end
 
-          if stale?(:etag => @attachment.digest) 
+          if stale?(:etag => @attachment.digest)
             # images are sent inline
             url = @attachment.file_server.ftpurl_for(@attachment.disk_directory,
                     true ,root_included=true) + "/" + @attachment.disk_filename
@@ -79,9 +79,10 @@ module FileServers
             #                 :disposition => (@attachment.image? ? 'inline' : 'attachment')
             redirect_to url
           end
-        end        
+        end
 
         def ftpthumbnail
+          logger.debug("ftpthumbnail.")
           return if !@attachment.hasfileinftp?
           if @attachment.thumbnailable? && thumbnail = @attachment.thumbnail(:size => params[:size])
             if stale?(:etag => thumbnail)
@@ -94,7 +95,7 @@ module FileServers
             # No thumbnail for the attachment or thumbnail could not be created
             render :nothing => true, :status => 404
           end
-        end        
+        end
       end
 
       module Redmine23AndNewer
@@ -105,7 +106,7 @@ module FileServers
           # redirecting to dropbox is not necessary only an ajax upload is being done,
           # which is determined by having an uninitialized @attachment
           # skip_redirection = false
-          
+
           # XXX Redmine 2.3+ ajax file upload handling
           if @attachment.nil?
             # Since we uploads occur prior to an actual record being created,

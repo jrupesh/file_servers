@@ -7,16 +7,18 @@ module FileServers
 
         base.class_eval do
           unloadable
-          belongs_to          :file_server
-          cattr_accessor      :context_obj
 
-          alias_method_chain  :files_to_final_location, :ftp
-          alias_method_chain  :target_directory, :organize_files
-          alias_method_chain  :thumbnail, :ftp
-          alias_method_chain  :readable?, :ftp
+          belongs_to          :file_server
 
           before_destroy      :delete_from_ftp
           after_save          :organize_ftp_files
+
+          alias_method_chain  :files_to_final_location, :ftp
+          alias_method_chain  :target_directory, :organize_files
+          alias_method_chain  :readable?, :ftp
+          # alias_method_chain  :thumbnail, :esiftp
+
+          cattr_accessor      :context_obj
         end
       end
 
@@ -24,7 +26,7 @@ module FileServers
         def set_context(context)
           @@context_obj = context
         end
-        
+
         def get_context
           begin
             ctx = @@context_obj
@@ -53,7 +55,7 @@ module FileServers
           logger.debug("FILESERVER : Save files to Final location.")
           project = get_project
 
-          if !project.nil? && project.has_file_server? && Setting.plugin_file_servers["organize_uploaded_files"] == "on" && 
+          if !project.nil? && project.has_file_server? && Setting.plugin_file_servers["organize_uploaded_files"] == "on" &&
             @temp_file && (@temp_file.size > 0)
 
             self.file_server = project.file_server
@@ -65,10 +67,10 @@ module FileServers
             md5.update(content)
             self.digest = md5.hexdigest
 
-            # set the temp file to nil so the model's original after_save block 
+            # set the temp file to nil so the model's original after_save block
             # skips writing to the filesystem
             @temp_file = nil if ret
-            
+
             content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
             assign_attributes(:content_type => content_type)
           else
@@ -157,7 +159,7 @@ module FileServers
             if context.class.name == "Issue"
               path = context.alien_files_folder_url(false)
 
-              logger.debug("FILESERVER : #{disk_filename} : #{diskfile}.")              
+              logger.debug("FILESERVER : #{disk_filename} : #{diskfile}.")
 
               if disk_filename.present? && File.exist?(diskfile)
                 logger.debug("FILESERVER : After save attachment : File exists on App Server.")
@@ -173,23 +175,23 @@ module FileServers
               path = ftp_relative_path
             end
             content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
-            
+
             update_hash = {:disk_directory => path, :content_type => content_type }.merge(f)
             Attachment.update_all( update_hash ,
-                                  {:id => self.id})          
+                                  {:id => self.id})
             self.disk_directory = path
-          elsif Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on" && context.class.name == "Issue" 
+          elsif Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on" && context.class.name == "Issue"
             path = context.build_relative_path
             dir = File.join(self.class.storage_path, path.to_s )
             if disk_filename.present? && File.exist?(diskfile) && dir != File.dirname(self.diskfile)
-              
+
               FileUtils.mkdir_p(dir) unless File.directory?(dir)
               FileUtils.mv(diskfile, dir) unless diskfile == File.join(dir,disk_filename)
 
               content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
 
               Attachment.update_all({:disk_directory => path, :content_type => content_type },
-                                    {:id => self.id})          
+                                    {:id => self.id})
               self.disk_directory = path
             end
           end
@@ -222,13 +224,14 @@ module FileServers
           end
           data
         end
-   
+
         def readable_with_ftp?
           return readable_without_ftp? if self.file_server.nil?
           true
         end
 
-        def thumbnail_with_ftp(options={})
+        def thumbnail_with_esiftp(options={})
+          logger.debug("thumbnail_with_esiftp.")
           if thumbnailable? && !self.file_server.nil?
             size = options[:size].to_i == 0 ? Setting.thumbnails_size.to_i : options[:size].to_i
             tfile = File.join(self.class.thumbnails_storage_path, "#{id}_#{digest}_#{size}.thumb")
@@ -236,16 +239,17 @@ module FileServers
               path = File.dirname(self.diskfile)
               unless File.directory?(path)
                 FileUtils.mkdir_p(path)
-              end              
+              end
               self.file_server.readftpFile("#{disk_directory}/#{disk_filename}", self.diskfile)
-              ret = thumbnail_without_ftp(options)
+              # ret = thumbnail_without_esiftp(options)
               # File.delete(self.diskfile) if File.exist?(self.diskfile)
             else
-              ret = thumbnail_without_ftp(options)
+              # ret = thumbnail_without_esiftp(options)
             end
           else
-            ret = thumbnail_without_ftp(options)
+            # ret = thumbnail_without_esiftp(options)
           end
+          ret = thumbnail_without_esiftp(options)
           ret
         end
 
