@@ -1,3 +1,5 @@
+require_dependency 'attachment'
+
 module FileServers
   module Patches
     module AttachmentPatch
@@ -6,7 +8,7 @@ module FileServers
         base.send(:include, InstanceMethods)
 
         base.class_eval do
-          unloadable
+          unloadable # Send unloadable so it will not be unloaded in development
 
           belongs_to          :file_server
 
@@ -16,7 +18,7 @@ module FileServers
           alias_method_chain  :files_to_final_location, :ftp
           alias_method_chain  :target_directory, :organize_files
           alias_method_chain  :readable?, :ftp
-          # alias_method_chain  :thumbnail, :esiftp
+          alias_method_chain  :thumbnail, :esiftp
 
           cattr_accessor      :context_obj
         end
@@ -219,6 +221,8 @@ module FileServers
           if diskfile && File.exist?(diskfile)
             data = File.new(diskfile, "rb").read
           else
+            logger.debug("Downloading File : #{disk_directory}/#{disk_filename} to --> #{self.diskfile}")
+            FileUtils.mkdir_p(File.dirname(self.diskfile)) unless File.directory?(File.dirname(self.diskfile))
             fs.readftpFile("#{disk_directory}/#{disk_filename}", self.diskfile)
             data = File.new(diskfile, "rb").read
           end

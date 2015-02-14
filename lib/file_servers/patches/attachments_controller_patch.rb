@@ -83,17 +83,19 @@ module FileServers
 
         def ftpthumbnail
           logger.debug("ftpthumbnail.")
-          return if !@attachment.hasfileinftp?
-          if @attachment.thumbnailable? && thumbnail = @attachment.thumbnail(:size => params[:size])
-            if stale?(:etag => thumbnail)
-              send_file thumbnail,
-                :filename => filename_for_content_disposition(@attachment.filename),
-                :type => detect_content_type(@attachment),
-                :disposition => 'inline'
+          if @attachment.hasfileinftp?
+            logger.debug("ftpthumbnail : File is stored in FTP.")
+            if @attachment.thumbnailable? && thumbnail = @attachment.thumbnail(:size => params[:size])
+              if stale?(:etag => thumbnail)
+                send_file thumbnail,
+                  :filename => filename_for_content_disposition(@attachment.filename),
+                  :type => detect_content_type(@attachment),
+                  :disposition => 'inline'
+              end
+            else
+              # No thumbnail for the attachment or thumbnail could not be created
+              render :nothing => true, :status => 404
             end
-          else
-            # No thumbnail for the attachment or thumbnail could not be created
-            render :nothing => true, :status => 404
           end
         end
       end

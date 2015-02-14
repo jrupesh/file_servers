@@ -6,7 +6,7 @@ module FileServers
         base.send(:include, InstanceMethods)
 
         base.class_eval do
-          unloadable
+          unloadable # Send unloadable so it will not be unloaded in development
           alias_method_chain :link_to_attachment, :ftp
         end
       end
