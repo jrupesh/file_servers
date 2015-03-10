@@ -1,3 +1,5 @@
+require 'uri'
+
 module FileServers
   module Patches
     module ApplicationHelperPatch
@@ -17,7 +19,9 @@ module FileServers
 			    if !attachment.file_server.nil?
 			      url = attachment.file_server.ftpurl_for(attachment.disk_directory,
 			      				true ,root_included=true) + "/" + attachment.disk_filename
-			      link_to(h(attachment.filename), url, :target => "_blank")
+            uri2 = URI.parse(url)
+            uri2.scheme ||= 'ftp'
+			      link_to(h(attachment.filename), uri2.to_s, :target => "_blank", :class => 'icon icon-attachment' )
 			    else
 			    	link_to_attachment_without_ftp(attachment, options)
 			    end

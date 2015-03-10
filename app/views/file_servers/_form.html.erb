@@ -23,7 +23,7 @@
   <%= submit_tag !@file_server.new_record? ? l(:button_save) : l(:button_add) %>
 </div>
 <div class="splitcontentright">
-<% if @projects.any? %>
+<% if @projects && @projects.any? %>
   <fieldset class="box" id="file_servers_project_ids">
     <legend><%= l(:label_project_plural) %></legend>
     <%= render_project_nested_lists(@projects) do |p|

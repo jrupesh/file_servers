@@ -1,6 +1,10 @@
 <% if @attachments_new && !@attachments_new.empty? %>
 	<% @attachments_new.each do |attachment| %>
-		$('.attachments').append('<%= escape_javascript(render :partial => "attachments/filelinks", :locals => {:attachment => attachment, :options => @options}) %>');
+    if ( $('.attachments').length > 0 ){
+		  $('.attachments').append('<%= escape_javascript(render :partial => "attachments/filelinks", :locals => {:attachment => attachment, :options => @options}) %>');
+    }else{
+      $('.description').append('<%= escape_javascript(render :partial => "attachments/filelinks", :locals => {:attachment => attachment, :options => @options}) %>');
+    }
 	<% end %>
 <% end %>
 

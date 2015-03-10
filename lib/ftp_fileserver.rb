@@ -22,7 +22,7 @@ module Redmine::Acts::Attachable
 
     def save_attachments(attachments, author=User.current)
       Attachment.set_context(self)
-      orig_save_attachments(attachments, author=User.current)
+      orig_save_attachments(attachments, author)
     end
   end
 end

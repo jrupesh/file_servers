@@ -1,7 +1,7 @@
 module FileServers
   module Patches
     module ProjectPatch
-      
+
       def self.included(base) # :nodoc:
         base.extend(ClassMethods)
         base.send(:include, InstanceMethods)
@@ -9,6 +9,7 @@ module FileServers
         base.class_eval do
           unloadable
           belongs_to :file_server
+          safe_attributes 'file_server_id'
         end
       end
 
@@ -18,7 +19,7 @@ module FileServers
       module InstanceMethods
 
         def has_file_server?
-          !self.file_server.nil?
+          Setting.plugin_file_servers["organize_uploaded_files"] == "on" && !self.file_server.nil?
         end
 
         def proj_tree_path

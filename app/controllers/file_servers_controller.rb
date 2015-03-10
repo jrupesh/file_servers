@@ -7,18 +7,19 @@ class FileServersController < ApplicationController
   helper :file_servers
 
   def index
-    @file_servers = FileServer.find(:all, :order => "address ASC" )
+    @file_servers = FileServer.all.order("address ASC")
   end
-  
+
   def new
     @file_server = FileServer.new
     @projects = Project.all
   end
 
   def create
+    # attrs = file_server_params
     attrs = params[:file_server]
     attrs[:password] = FileServer::crypt_password(attrs[:password])
-    @file_server = FileServer.new(params[:file_server])
+    @file_server = FileServer.new(attrs)
     if @file_server.save
       flash[:notice] = l(:notice_successful_create)
       redirect_to :action => 'index', :tab => @file_server.class.name
@@ -42,7 +43,7 @@ class FileServersController < ApplicationController
       return
     end
   end
-  
+
   def destroy
     @file_server = FileServer.find(params[:id]).destroy
     redirect_to :action => 'index', :tab => @file_server.class.name
@@ -50,7 +51,7 @@ class FileServersController < ApplicationController
     flash[:error] = l(:error_can_not_delete_file_server)
     redirect_to :action => 'index'
   end
-  
+
   # def activate_in_project
   #   file_server = FileServer.find(params[:id])
   #   project = Project.find(params[:project_id])
@@ -67,4 +68,8 @@ class FileServersController < ApplicationController
   #   redirect_to :action => 'edit', :id => file_server
   # end
 
+  private
+  def file_server_params
+    params.require(:file_server).permit(:name, :protocol, :address, :port, :root, :login, :password, :autoscan, :is_public, :project_ids)
+  end
 end

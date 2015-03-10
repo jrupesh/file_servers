@@ -1,7 +1,7 @@
 module FileServers
   module Patches
     module IssuePatch
-      
+
       def self.included(base) # :nodoc:
         base.extend(ClassMethods)
         base.send(:include, InstanceMethods)
@@ -21,7 +21,7 @@ module FileServers
           path  = sprintf("%.5d-%.5d",i1*10000,(i1*10000+9999)) + "/"
           path += sprintf("%.5d-%.5d",i2*100,(i2*100+99)) + "/"
           path += self.id.to_s
-        end      
+        end
 
         def alien_files_folder_url(full)
           @path.blank? ? @path = build_relative_path : @path
@@ -49,7 +49,7 @@ module FileServers
           return result if !self.project.has_file_server?
 
           path = alien_files_folder_url(false)
-          url  = alien_files_folder_url(true)
+          # url  = alien_files_folder_url(true)
 
           needs_reloading = false
           # att_files = self.attachments.collect{|a| a.filename}
@@ -58,12 +58,13 @@ module FileServers
 
           begin
             files = self.project.file_server.scan_directory path,att_files,true
+            logger.debug("scan_alien_files ---- files - #{files}")
             if files.nil?
               result[:error] = l(:error_file_server_scan)
               return result
             end
 
-            journal = issue_from.init_journal(User.current) if files.size > 0
+            journal = self.init_journal(User.current) if files.size > 0
             files.each do |file, filesize|
               next if att_files.include? file
               new_att = Attachment.new
@@ -84,22 +85,24 @@ module FileServers
               new_att.save
               result[:changed] = true;
               result[:new] << new_att if changelog
-              
-              journal.details << JournalDetail.new( :property => 'attachment', 
+
+              journal.details << JournalDetail.new( :property => 'attachment',
                                                     :prop_key => new_att.id,
                                                     :value => new_att.filename) if !journal.nil?
             end
             journal.save if !journal.nil?
 
-            logger.debug("scan_alien_files ---- files - #{files.keys}")
 
-            self.attachments.each do |att|
-              if !files.keys.include? att.disk_filename
-                Attachment.destroy(att)
-                result[:changed] = true;
-              end
-            end
-       
+
+            ## Comment out Automatic destroy of attachments if not found in the file server.
+
+            # self.attachments.each do |att|
+            #   if !files.keys.include? att.disk_filename
+            #     Attachment.destroy(att)
+            #     result[:changed] = true;
+            #   end
+            # end
+
           rescue
             result[:error] = l(:error_file_server_scan)
           end

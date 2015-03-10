@@ -81,7 +81,7 @@ module FileServers
         end
 
         def target_directory_with_organize_files
-          if Setting.plugin_file_servers["organize_uploaded_files"] == "on"
+          if Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on"
             path = get_path_from_context_project
           else
             path = target_directory_without_organize_files
@@ -176,12 +176,13 @@ module FileServers
             else
               path = ftp_relative_path
             end
-            content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
+            # content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
 
-            update_hash = {:disk_directory => path, :content_type => content_type }.merge(f)
-            Attachment.update_all( update_hash ,
-                                  {:id => self.id})
-            self.disk_directory = path
+            # update_hash = {:disk_directory => path, :content_type => content_type }.merge(f)
+            # Attachment.update_all( update_hash ,
+            #                       {:id => self.id})
+            Attachment.where(:id => self.id).update_all(:disk_directory => path)
+            # self.disk_directory = path
           elsif Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on" && context.class.name == "Issue"
             path = context.build_relative_path
             dir = File.join(self.class.storage_path, path.to_s )
@@ -190,11 +191,12 @@ module FileServers
               FileUtils.mkdir_p(dir) unless File.directory?(dir)
               FileUtils.mv(diskfile, dir) unless diskfile == File.join(dir,disk_filename)
 
-              content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
+              # content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
 
-              Attachment.update_all({:disk_directory => path, :content_type => content_type },
-                                    {:id => self.id})
-              self.disk_directory = path
+              # Attachment.update_all({:disk_directory => path, :content_type => content_type },
+              #                       {:id => self.id})
+              Attachment.where(:id => self.id).update_all(:disk_directory => path)
+              # self.disk_directory = path
             end
           end
         end
@@ -212,7 +214,7 @@ module FileServers
           return false if self.container.nil? && self.file_server.nil?
           project = get_project
           return false if project && !project.has_file_server?
-          true
+          self.file_server.nil? ? false : true
         end
 
         def readftpcontent

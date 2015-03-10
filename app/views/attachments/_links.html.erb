@@ -2,6 +2,11 @@
 <% if @scan_result && @scan_result[:error] %>
   <div class='flash error'><%= @scan_result[:error] %></div>
 <% end %>
+<div class="contextual">
+  <%= link_to image_tag('edit.png'),
+        container_attachments_edit_path(container),
+        :title => l(:label_edit_attachments) if options[:editable] %>
+</div>
 <% for attachment in attachments %>
 <p><%= link_to_attachment attachment, :class => 'icon icon-attachment', :download => true -%>
   <% if attachment.is_text? %>
@@ -22,7 +27,7 @@
     <span class="author"><%= h(attachment.author) %>, <%= format_time(attachment.created_on) %></span>
   <% end %>
   <%= " (manually uploaded)" if attachment.author_id == 0 %>
-  <%= image_tag('/plugin_assets/file_servers/images/new.png') if @scan_result && @scan_result[:new].include?(attachment) %> 
+  <%= image_tag('/plugin_assets/file_servers/images/new.png') if @scan_result && @scan_result[:new].include?(attachment) %>
   </p>
 <% end %>
 <% if defined?(thumbnails) && thumbnails %>

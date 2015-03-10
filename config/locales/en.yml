@@ -7,6 +7,7 @@ en:
   field_port: Port
   field_autoscan: Automatic scan
 
+  field_file_server: FTP File server
   label_file_server: File server
   label_file_server_plural: File servers
   label_file_server_new: New file server
@@ -18,7 +19,7 @@ en:
   label_file_server_projects: This file server is currently activated for these projects
   label_file_server_current: current file server
 
-  label_scan_mode: Scan mode 
+  label_scan_mode: Scan mode
   label_scan_auto: Automatic
   label_scan_manual: Manual
 
@@ -32,3 +33,5 @@ en:
   attach_browse:  browse
 
   manually_uploaded: manually uploaded
+  em_selection_on_project_creation: Enable mandatory file server association on Project creation or Update of Project.
+  selection_on_project_creation: Mandatory File Server for Projects

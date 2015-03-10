@@ -1,12 +1,15 @@
 class FileServer < ActiveRecord::Base
   unloadable
+  # include Redmine::SafeAttributes
+
   has_many :projects, :dependent => :nullify
   has_many :attachment, :dependent => :nullify
-  
+
   PROTOCOL_FTP = 0
-  
+
   PROTOCOLS = { PROTOCOL_FTP => { :name => "ftp", :label => :label_file_server_ftp, :order => 1}
           }.freeze
+
 
   validates_presence_of :name
   validates_length_of :name, :maximum => 50
@@ -18,8 +21,11 @@ class FileServer < ActiveRecord::Base
   validates_length_of :password, :maximum => 40
   validates_inclusion_of :protocol, :in => PROTOCOLS.keys
 
+  attr_accessible :name, :protocol, :address, :port, :root, :login, :password, :autoscan, :is_public, :project_ids
+
   require 'net/ftp'
   require 'stringio'
+  # require 'uri'
 
   def initialize(attributes=nil, *args)
     super
@@ -40,6 +46,7 @@ class FileServer < ActiveRecord::Base
   end
 
   def ftpurl_for(relative_path,full,root_included=false)
+
     url = []
     if full
       ftp_credentials = ""
@@ -50,7 +57,7 @@ class FileServer < ActiveRecord::Base
       ftp_credentials += self.address
       ftp_credentials += ":" + self.port.to_s unless self.port.nil?
       url << ftp_credentials
-    end 
+    end
     url << self.root if (!self.root.blank? && !root_included)
     url << relative_path
     logger.debug("url_for url -- #{url} ---")
@@ -62,12 +69,13 @@ class FileServer < ActiveRecord::Base
     return if ftp.nil?
     ret = false
     begin
-      logger.debug("make_directory Change Directory - #{path}")      
+      logger.debug("make_directory Change Directory - #{path}")
       ftp.chdir path
+      ret = true
     rescue
       begin
         path.split("/").each do |d|
-          logger.debug("make_directory create Directory - #{d}")                
+          logger.debug("make_directory create Directory - #{d}")
           begin
             ftp.mkdir d
           rescue
@@ -86,29 +94,29 @@ class FileServer < ActiveRecord::Base
     ftp = ftp_connection
     return if ftp.nil?
 
-    # files = nil
     files = {}
     begin
       if create_it
         make_directory(path,ftp,false)
+      else
+        ftp.chdir path
       end
-      
-      ftp.chdir path
+
       ftp.passive = true
       # files = ftp.nlst
 
-      remote_files = ftp.nlst
-      remote_files.each do |file|
+      ftp.nlst.each do |file|
+        logger.debug("scan_directory File - #{file}")
         if !attched_files.include? file
-          remote_size = ftp.size(file)
-          files[file] = remote_size
+          files[file] = ftp.size(file)
+          logger.debug("scan_directory File Size - #{files[file]}")
         else
           files[file] = 0 # Skip getting file size
         end
       end
     rescue
     end
-    ftp.close    
+    ftp.close
     files
   end
 
@@ -125,7 +133,7 @@ class FileServer < ActiveRecord::Base
       ret = true
     rescue
     end
-    ftp.close    
+    ftp.close
     ret
   end
 
@@ -140,7 +148,7 @@ class FileServer < ActiveRecord::Base
       ret = true
     rescue
     end
-    ftp.close    
+    ftp.close
     ret
   end
 
@@ -183,7 +191,7 @@ class FileServer < ActiveRecord::Base
     rescue
       logger.debug("move_file_to_dir ERROR")
     end
-    ftp.close    
+    ftp.close
     ret
   end
 
@@ -196,7 +204,7 @@ class FileServer < ActiveRecord::Base
       ret = ftp.getbinaryfile(ftpremotefile, localfile)
     rescue
     end
-    ftp.close    
+    ftp.close
     ret
   end
 
@@ -211,7 +219,7 @@ class FileServer < ActiveRecord::Base
       ret = true if not ftp.nlst(filename).empty?
     rescue
     end
-    ftp.close    
+    ftp.close
     ret
   end
 
