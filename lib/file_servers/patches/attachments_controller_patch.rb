@@ -85,7 +85,7 @@ module FileServers
           logger.debug("ftpthumbnail.")
           if @attachment.hasfileinftp?
             logger.debug("ftpthumbnail : File is stored in FTP.")
-            if @attachment.thumbnailable? && thumbnail = @attachment.thumbnail(:size => params[:size])
+            if @attachment.thumbnailable? && thumbnail = @attachment.ftp_thumbnail(:size => params[:size])
               if stale?(:etag => thumbnail)
                 send_file thumbnail,
                   :filename => filename_for_content_disposition(@attachment.filename),
