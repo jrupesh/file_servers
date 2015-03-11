@@ -1,7 +1,7 @@
 module FileServers
   module Patches
     module IssuesControllerPatch
-      
+
       def self.included(base) # :nodoc:
         base.extend(ClassMethods)
         base.send(:include, InstanceMethods)
@@ -9,7 +9,7 @@ module FileServers
         base.class_eval do
           unloadable # Send unloadable so it will not be unloaded in development
           before_filter :find_issue, :only => [:show, :edit, :update, :scan_files]
-          before_filter :authorize, :except => [:index, :scan_files]
+          before_filter :authorize, :except => [:index, :new, :create, :scan_files]
           before_filter :show_auto_scan_files, :only => :show
         end
       end

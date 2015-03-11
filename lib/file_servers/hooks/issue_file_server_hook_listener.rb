@@ -15,7 +15,7 @@ module FileServers
           s << f.select(:file_server_id, options_for_select(FileServer.all.collect {|p| [ p.name, p.id ] }, project.file_server_id ), {include_blank: true}, disabled )
         end
         s << link_to(image_tag('add.png', :style => 'vertical-align: middle;'),
-              new_file_server_path,
+              { controller: :file_servers, action: :new },
               :method => 'get',
               :title => l(:label_file_server_new),
               :tabindex => 200) if User.current.admin?

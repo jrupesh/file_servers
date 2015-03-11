@@ -18,7 +18,7 @@ module FileServers
           alias_method_chain  :files_to_final_location, :ftp
           alias_method_chain  :target_directory, :organize_files
           alias_method_chain  :readable?, :ftp
-          alias_method_chain  :thumbnail, :esiftp
+          # alias_method_chain  :thumbnail, :esiftp
 
           cattr_accessor      :context_obj
         end
@@ -236,7 +236,8 @@ module FileServers
           true
         end
 
-        def thumbnail_with_esiftp(options={})
+        # def thumbnail_with_esiftp(options={})
+        def ftp_thumbnail(options={})
           logger.debug("thumbnail_with_esiftp.")
           if thumbnailable? && !self.file_server.nil?
             size = options[:size].to_i == 0 ? Setting.thumbnails_size.to_i : options[:size].to_i
@@ -255,7 +256,7 @@ module FileServers
           else
             # ret = thumbnail_without_esiftp(options)
           end
-          ret = thumbnail_without_esiftp(options)
+          ret = thumbnail(options)
           ret
         end
 

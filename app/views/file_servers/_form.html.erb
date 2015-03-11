@@ -12,7 +12,7 @@
     <%= f.select :protocol, protocols.keys.sort{|x,y| protocols[x][:order] <=> protocols[y][:order]}.collect{|k|
       [l(protocols[k][:label]), k]}, :required => true %>
     </p>
-    <p><%= f.text_field :address, :required => true%></p>
+    <p><%= f.label :address, l(:field_server_address) %><%= f.text_field :address, :required => true%></p>
     <p><%= f.text_field :port%></p>
     <p><%= f.text_field :root%></p>
     <p><%= f.text_field :login%></p>
