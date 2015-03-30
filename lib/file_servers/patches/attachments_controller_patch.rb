@@ -65,6 +65,7 @@ module FileServers
         def ftpdownload
           return if !@attachment.hasfileinftp?
           logger.debug("Attachment has FTP File.")
+          @attachment.instance_variable_set "@thumbnail_flag", true
           if !@attachment.container.nil? || @attachment.container.is_a?(Version) || @attachment.container.is_a?(Project)
             @attachment.increment_download
           end
@@ -85,6 +86,7 @@ module FileServers
           logger.debug("ftpthumbnail.")
           if @attachment.hasfileinftp?
             logger.debug("ftpthumbnail : File is stored in FTP.")
+            @attachment.instance_variable_set "@thumbnail_flag", true
             if @attachment.thumbnailable? && thumbnail = @attachment.ftp_thumbnail(:size => params[:size])
               if stale?(:etag => thumbnail)
                 send_file thumbnail,

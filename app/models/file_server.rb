@@ -1,6 +1,6 @@
 class FileServer < ActiveRecord::Base
   unloadable
-  include Redmine::SafeAttributes
+  # include Redmine::SafeAttributes
 
   has_many :projects, :dependent => :nullify
   has_many :attachment, :dependent => :nullify
@@ -21,7 +21,7 @@ class FileServer < ActiveRecord::Base
   validates_length_of :password, :maximum => 40
   validates_inclusion_of :protocol, :in => PROTOCOLS.keys
 
-  safe_attributes :name, :protocol, :address, :port, :root, :login, :password, :autoscan, :is_public, :project_ids,
+  attr_accessible :name, :protocol, :address, :port, :root, :login, :password, :autoscan, :is_public, :project_ids,
             :if => lambda {|project, user| user.admin? }
 
   require 'net/ftp'

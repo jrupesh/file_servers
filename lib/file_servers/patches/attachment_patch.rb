@@ -45,6 +45,10 @@ module FileServers
 
       module InstanceMethods
 
+        def thumbnail_flag
+          @thumbnail_flag ||= false
+        end
+
         def get_context_class_name
           logger.debug("FILESERVER : Getting Context Name")
           context = self.container || self.class.get_context
@@ -151,6 +155,7 @@ module FileServers
 
         def organize_ftp_files
           logger.debug("FILESERVER : organize_ftp_files")
+          return if thumbnail_flag
           (self.container && !self.container.nil?) ? context = self.container : return
           project = get_project
           return if project.nil?
