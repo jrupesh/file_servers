@@ -82,6 +82,8 @@ module FileServers
               # new_att.author_id      = 0
               new_att.author         = User.current
               new_att.disk_directory = path
+              new_att.file_server    = self.project.file_server
+              new_att.instance_variable_set("@thumbnail_flag", true)
               new_att.save
               result[:changed] = true;
               result[:new] << new_att if changelog

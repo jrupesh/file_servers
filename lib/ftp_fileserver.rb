@@ -6,7 +6,7 @@ require 'file_servers/patches/issues_controller_patch'
 require 'file_servers/patches/attachments_controller_patch'
 
 require 'file_servers/patches/application_helper_patch'
-
+require 'file_servers/patches/attachments_helper_patch'
 
 ActionDispatch::Callbacks.to_prepare do
   require_dependency 'file_servers/hooks/issue_file_server_hook_listener'
@@ -56,5 +56,4 @@ Rails.configuration.to_prepare do
   unless ApplicationHelper.included_modules.include? FileServers::Patches::ApplicationHelperPatch
     ApplicationHelper.send(:include, FileServers::Patches::ApplicationHelperPatch)
   end
-
 end

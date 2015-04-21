@@ -12,7 +12,7 @@ module FileServers
 
           belongs_to          :file_server
 
-          before_destroy      :delete_from_ftp
+          after_destroy       :delete_from_ftp
           after_save          :organize_ftp_files
 
           alias_method_chain  :files_to_final_location, :ftp
@@ -40,6 +40,22 @@ module FileServers
 
         def set_file_attr_accessible
           attr_accessible :file
+        end
+
+        def object_scan_path(container)
+          # Not supported for Forum Messages and Forum Posting.
+          klass = container.class.name == "WikiPage" ? "Wiki" : container.class.name
+          project = container.respond_to?(:project) ? container.project : container.is_a?(Project) ? container : nil
+          pid = project.identifier if !project.nil?
+
+          path = [nil]
+          path << project.file_server.root if project && project.file_server && !project.file_server.root.blank?
+          path << pid if !pid.nil?
+          path << klass
+          path << container.id
+          path = path.compact.join('/')
+          logger.debug("FILESERVER : object_scan_path PATH #{path}")
+          path
         end
       end
 
@@ -122,10 +138,10 @@ module FileServers
         def ftp_filename
           if self.new_record?
             timestamp = DateTime.now.strftime("%y%m%d%H%M%S")
-            self.disk_filename = "#{timestamp}_#{filename}"
+            self.disk_filename = "#{timestamp}_#{filename.gsub(" ", "_")}"
           end
-          logger.debug("FILESERVER : ftp filename #{self.disk_filename.blank? ? filename : self.disk_filename}")
-          self.disk_filename.blank? ? filename : self.disk_filename
+          logger.debug("FILESERVER : ftp filename #{self.disk_filename.blank? ? filename.gsub(" ", "_") : self.disk_filename}")
+          self.disk_filename.blank? ? filename.gsub(" ", "_") : self.disk_filename
         end
 
         def ftp_relative_path(ctx = nil, pid = nil)
@@ -145,6 +161,7 @@ module FileServers
 
         def ftp_file_path(ftpn = ftp_filename, ctx = nil, pid = nil)
           ftpdirpath = ftp_relative_path(ctx, pid)
+
           ftpfilepath = ""
           ftpfilepath << ftpdirpath
           ftpfilepath << "/"
@@ -165,8 +182,8 @@ module FileServers
             f = {}
             if context.class.name == "Issue"
               path = context.alien_files_folder_url(false)
-
-              logger.debug("FILESERVER : #{disk_filename} : #{diskfile}.")
+              logger.debug("FILESERVER : diskfile #{disk_filename} : #{diskfile}.")
+              logger.debug("FILESERVER : path : #{path}.")
 
               if disk_filename.present? && File.exist?(diskfile)
                 logger.debug("FILESERVER : After save attachment : File exists on App Server.")
@@ -179,14 +196,26 @@ module FileServers
                 context.move_to_alien_files_folder(ftp_relative_path,path,ftp_filename)
               end
             else
-              path = ftp_relative_path
+              path = [nil]
+              path << project.file_server.root if project.file_server && !project.file_server.root.blank?
+              path << project.identifier
+              if container.class.name == 'Message'
+                path << "Board"
+                path << container.board_id
+              else
+                container.class.name == "WikiPage" ? path << "Wiki" : path << container.class.name
+                path << container.id
+              end
+              path = path.compact.join('/')
+              file_server.make_directory path
+              file_server.move_file_to_dir("#{disk_directory}/#{ftp_filename}", "#{path}/#{ftp_filename}")
             end
             # content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
 
             # update_hash = {:disk_directory => path, :content_type => content_type }.merge(f)
             # Attachment.update_all( update_hash ,
             #                       {:id => self.id})
-            Attachment.where(:id => self.id).update_all(:disk_directory => path)
+            Attachment.where(:id => self.id).update_all(:disk_directory => path) if disk_directory != path
             # self.disk_directory = path
           elsif Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on" && context.class.name == "Issue"
             path = context.build_relative_path
@@ -200,7 +229,7 @@ module FileServers
 
               # Attachment.update_all({:disk_directory => path, :content_type => content_type },
               #                       {:id => self.id})
-              Attachment.where(:id => self.id).update_all(:disk_directory => path)
+              Attachment.where(:id => self.id).update_all(:disk_directory => path) if disk_directory != path
               # self.disk_directory = path
             end
           end

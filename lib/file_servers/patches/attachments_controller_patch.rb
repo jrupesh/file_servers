@@ -17,11 +17,50 @@ module FileServers
           before_filter :ftpdownload, :only => :download
           before_filter :ftpthumbnail, :only => :thumbnail
           before_filter :prepare_attachment_context, :except => :destroy
+          before_filter :find_object_scan_path, :only => :scan_files
+
           alias_method_chain :file_readable, :ftp
         end
       end
 
       module InstanceMethods
+        def scan_files
+          logger.debug "scan_files ------. #{@path}"
+          att_files = @container.attachments.pluck(:disk_filename)
+          begin
+            files = @project.file_server.scan_directory @path,att_files,true
+            logger.debug("scan_alien_files ---- files - #{files}")
+            if files.nil?
+              flash[:error] = l(:error_file_server_scan)
+              redirect_back_or_default home_path
+              return
+            end
+
+            files.each do |file, filesize|
+              next if att_files.include? file
+              new_att = Attachment.new
+              new_att.container_id   = @container.id
+              new_att.container_type = @container.class.name
+              new_att.filename       = file
+              new_att.disk_filename  = file
+              new_att.filesize       = filesize
+              new_att.content_type   = Redmine::MimeType.of(file) || "application/octet-stream"
+
+              md5 = Digest::MD5.new
+              new_att.digest         = md5.hexdigest # A dummy digest
+              new_att.author         = User.current
+              new_att.disk_directory = @path
+              new_att.file_server    = @project.file_server
+              new_att.instance_variable_set("@thumbnail_flag", true)
+              new_att.save
+            end
+            flash[:notice] = l(:success_file_server_scan)
+          rescue
+            flash[:error] = l(:error_file_server_scan)
+          end
+          redirect_back_or_default home_path
+        end
+
         def file_readable_with_ftp
           if @attachment.hasfileinftp?
             # if @attachment.ftpfileexists?
@@ -99,6 +138,28 @@ module FileServers
               render :nothing => true, :status => 404
             end
           end
+        end
+
+        private
+        def find_object_scan_path
+          klass = params[:object_type].to_s.singularize.classify.constantize rescue nil
+          unless klass && klass.reflect_on_association(:attachments)
+            render_404
+            return
+          end
+
+          @container = klass.find(params[:object_id])
+          if @container.respond_to?(:visible?) && !@container.visible?
+            render_403
+            return
+          end
+
+          if !@container.respond_to?(:project)
+            render_403
+            return
+          end
+          @project = @container.project
+          @path = Attachment.object_scan_path(@container)
         end
       end
 

@@ -35,3 +35,6 @@ en:
   manually_uploaded: manually uploaded
   em_selection_on_project_creation: Enable mandatory file server association on Project creation or Update of Project.
   selection_on_project_creation: Mandatory File Server for Projects
+
+  error_file_server_scan: FTP Server scan failed.
+  success_file_server_scan: FTP Server scan completed.

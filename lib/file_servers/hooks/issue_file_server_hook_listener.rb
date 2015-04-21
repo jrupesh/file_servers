@@ -1,7 +1,7 @@
 module FileServers
   module Hooks
 		class IssueFileServerHookListener < Redmine::Hook::ViewListener
-			render_on :view_issues_show_description_bottom, :partial => "issues/ftpscanbrowse"
+			# render_on :view_issues_show_description_bottom, :partial => "issues/ftpscanbrowse"
 
       def view_projects_form(context = { })
         project = context[:project]

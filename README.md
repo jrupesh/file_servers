@@ -13,6 +13,9 @@ Thus giving the Redmine users one of the ways to manage their servers effectivel
 
 All the redmine objects which have file upload feature will be uploaded to the ftp site.
 
+The plugin also provides where in the user can ftp the file from an external client and then attach to the Redmine
+objects through a "rescan" functionality available in News, Issues, Wiki, Documents.
+
 Features:
 --------
 
@@ -38,6 +41,6 @@ Installation procedure:
 
 * Associate the projects the FTP file server is applicable to.
 
-* Note : 
+* Note :
 ** Make sure the initial path "/" is not entered in the string.
 ** The preview when issue edit on the ftp site is little slower as the ftp files are fetched from ftp site and rendered.
