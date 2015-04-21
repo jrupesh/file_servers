@@ -1,7 +1,0 @@
-<% if @project.has_file_server? && Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on" %>
-  <p>
-		<strong><%= l(:attach_files) %></strong> (
-		<%= @project.file_server.autoscan ? "" : link_to(l(:attach_rescan), { controller: :issues, action: :scan_files, :id => @issue }, :method => :post, :remote => true ) + " / "%>
-		<%= link_to(l(:attach_browse), @issue.alien_files_folder_url(true), :target => "_blank") %>
-	)</p>
-<% end %>
