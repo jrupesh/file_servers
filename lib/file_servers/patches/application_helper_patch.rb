@@ -19,7 +19,8 @@ module FileServers
 			    if !attachment.file_server.nil?
 			      url = attachment.file_server.ftpurl_for(attachment.disk_directory,
 			      				true ,root_included=true) + "/" + attachment.disk_filename
-            uri2 = URI.parse(url)
+            encode_uri = URI.encode(url, "[]")
+            uri2 = URI.parse(encode_uri)
             uri2.scheme ||= 'ftp'
 			      link_to(h(attachment.filename), uri2.to_s, :target => "_blank", :class => 'icon icon-attachment' )
 			    else
