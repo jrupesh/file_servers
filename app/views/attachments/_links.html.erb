@@ -3,19 +3,8 @@
   <div class='flash error'><%= @scan_result[:error] %></div>
 <% end %>
 
-<% if container.respond_to?(:project) && container.project.has_file_server? && ( %w"Message Board".include?( container.class.name ) == false ) %>
-  <p>
-    <strong><%= l(:attach_files) %></strong> (
-    <% if container.is_a?(Issue) %>
-      <%= container.project.file_server.autoscan ? "" : link_to(l(:attach_rescan), { controller: :issues, action: :scan_files, :id => container }, :method => :post, :remote => true ) + " / "%>
-      <%= link_to(l(:attach_browse), container.alien_files_folder_url(true), :target => "_blank") %>
-    <% else %>
-      <%#= @project.file_server.autoscan ? "" : link_to(l(:attach_rescan), container_scan_attachments_files_path(container, :back_url => request.original_url), :method => :patch ) + " / "%>
-      <%= @project.file_server.autoscan ? "" : link_to(l(:attach_rescan), object_scan_attachments_files_path(container.class.name.underscore.pluralize, container.id, :back_url => request.original_url), :method => :patch ) + " / "%>
-      <%#= link_to(l(:attach_browse), container_browse_attachments_files_path(container), :target => "_blank") %>
-      <%= link_to(l(:attach_browse), container.project.file_server.ftpurl_for(Attachment.object_scan_path(container),true,false), :target => "_blank") %>
-    <% end %>
-  )</p>
+<% if container.respond_to?(:project) && container.project.has_file_server? && ( %w"Message Board Issue".include?( container.class.name ) == false ) %>
+  <%= render :partial => 'attachments/ftpscanbrowse', :locals => { :container => container } %>
 <% end %>
 
 <div class="contextual">
