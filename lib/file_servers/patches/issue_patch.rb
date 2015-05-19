@@ -96,7 +96,7 @@ module FileServers
 
             ## Comment out Automatic destroy of attachments if not found in the file server.
             self.attachments.each do |att|
-              if !files.keys.include? att.disk_filename && att.file_server_id == self.project.file_server_id
+              if !files.keys.include?(att.disk_filename) && att.file_server_id == self.project.file_server_id
                 Attachment.destroy(att)
                 result[:changed] = true;
               end
