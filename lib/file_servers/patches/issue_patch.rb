@@ -8,6 +8,7 @@ module FileServers
 
         base.class_eval do
           unloadable
+          after_create :create_alien_files_folder
         end
       end
 
@@ -88,19 +89,20 @@ module FileServers
               result[:changed] = true;
               result[:new] << new_att if changelog
 
-              journal.details << JournalDetail.new( :property => 'attachment',
-                                                    :prop_key => new_att.id,
-                                                    :value => new_att.filename) if !journal.nil?
+              journal.journalize_attachment(new_att, :added) if !journal.nil?
             end
-            journal.save if !journal.nil?
 
             ## Comment out Automatic destroy of attachments if not found in the file server.
             self.attachments.each do |att|
               if !files.keys.include?(att.disk_filename) && att.file_server_id == self.project.file_server_id
+                journal.journalize_attachment(att, :removed) if !journal.nil?
                 Attachment.destroy(att)
                 result[:changed] = true;
               end
             end
+
+            journal.save if !journal.nil?
+
           rescue
             result[:error] = l(:error_file_server_scan)
           end
