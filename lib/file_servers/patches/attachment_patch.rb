@@ -221,16 +221,11 @@ module FileServers
             path = context.build_relative_path
             dir = File.join(self.class.storage_path, path.to_s )
             if disk_filename.present? && File.exist?(diskfile) && dir != File.dirname(self.diskfile)
-
               FileUtils.mkdir_p(dir) unless File.directory?(dir)
-              FileUtils.mv(diskfile, dir) unless diskfile == File.join(dir,disk_filename)
-
-              # content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
-
-              # Attachment.update_all({:disk_directory => path, :content_type => content_type },
-              #                       {:id => self.id})
-              Attachment.where(:id => self.id).update_all(:disk_directory => path) if disk_directory != path
-              # self.disk_directory = path
+              unless diskfile == File.join(dir,disk_filename)
+                FileUtils.mv(diskfile, dir)
+                Attachment.where(:id => self.id).update_all(:disk_directory => path)
+              end
             end
           end
         end
