@@ -170,14 +170,29 @@ module FileServers
           ftpfilepath
         end
 
+        # Populates the path for all non issues.
+        def getpathforothers(proj)
+          path = [nil]
+          path << proj.file_server.root if proj.file_server && !proj.file_server.root.blank?
+          path << proj.identifier
+          if container.class.name == 'Message'
+            path << "Board"
+            path << container.board_id
+          else
+            container.class.name == "WikiPage" ? path << "Wiki" : path << container.class.name
+            path << container.id
+          end
+          path.compact.join('/')
+        end
+
         def organize_ftp_files
           logger.debug("FILESERVER : organize_ftp_files")
           return if thumbnail_flag
           (self.container && !self.container.nil?) ? context = self.container : return
-          project = get_project
-          return if project.nil?
+          gproject = get_project
+          return if gproject.nil?
 
-          if project.has_file_server?
+          if gproject.has_file_server?
             logger.debug("FILESERVER : After save attachment : Project has file server.")
             f = {}
             if context.class.name == "Issue"
@@ -189,24 +204,14 @@ module FileServers
                 logger.debug("FILESERVER : After save attachment : File exists on App Server.")
                 #If file exists in the local path then move to ftp.
                 #This happens when calling through API.
-                context.project.file_server.upload_file diskfile, path, ftp_filename
+                context.gproject.file_server.upload_file diskfile, path, ftp_filename
                 File.delete(diskfile)
-                f = { :file_server_id => project.file_server.id }
+                f = { :file_server_id => gproject.file_server.id }
               else
                 context.move_to_alien_files_folder(ftp_relative_path,path,ftp_filename)
               end
             else
-              path = [nil]
-              path << project.file_server.root if project.file_server && !project.file_server.root.blank?
-              path << project.identifier
-              if container.class.name == 'Message'
-                path << "Board"
-                path << container.board_id
-              else
-                container.class.name == "WikiPage" ? path << "Wiki" : path << container.class.name
-                path << container.id
-              end
-              path = path.compact.join('/')
+              path = getpathforothers(gproject)
               file_server.make_directory path
               file_server.move_file_to_dir("#{disk_directory}/#{ftp_filename}", "#{path}/#{ftp_filename}")
             end
