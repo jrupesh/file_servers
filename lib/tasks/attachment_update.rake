@@ -18,7 +18,7 @@ desc <<-END_DESC
 Copy files from redmine storage folder to a target external folder
 
 Example:
-  rake fileserver:move_files_out project=1 [tracker=12] target=/tmp/REDMINE action=list|move|copy RAILS_ENV="production"
+  rake fileserver:move_files_out projects="1,2,3" [tracker=12] target=/tmp/REDMINE action=list|move|copy|update fileserverid=1 RAILS_ENV="production"
   project: id of project owning files to move
   tracker: id of only tracker whose files must be moved, optional, if undefined all trackers in project are considered
   target : path of directory where files must be moved
@@ -37,10 +37,16 @@ END_DESC
   task :move_files_out => :environment do
     target = ENV['target']
     abort("Target folder not specified.") if target.nil?
-    project_id = ENV['project']
-    abort("Source project id not specified.") if project_id.nil?
+    project_ids = ENV['projects']
+    abort("Source project id not specified.") if project_ids.nil?
+    project_id = project_ids.split(",").map(&:to_i)
     action = ENV['action']
-    abort("Action needs to be specified of one of them -> list, move or copy.") if action.nil? || !(["list","move","copy"].include? action)
+    abort("Action needs to be specified of one of them -> list, move or copy.") if action.nil? || !(["list","move","copy","update"].include? action)
+    if action == "update"
+      fileserverid = ENV['fileserverid'] || nil
+      abort("Fileserver id needs to be specified for update action.") if fileserverid.nil? || fileserverid.to_i < 0
+      abort("Fileserver not found for id.") if FileServer.find_by_id(fileserverid.to_i).nil?
+    end
     tracker_id = ENV['tracker']
 
     # files = Attachment.find(:all, :include => [:container]);
@@ -48,11 +54,12 @@ END_DESC
     file_count = 0
     copy_count = 0
     del_count  = 0
+    update_count  = 0
     Attachment.includes(:container).all.find_in_batches(batch_size: 1000, start: 0 ) do |batch|
       batch.each do |file|
         # next if file.container_type != "Issue"
         next if !file.file_server_id.nil?
-        next if file.project.nil? || file.project.id != project_id.to_i
+        next if file.project.nil? || !project_id.include?(file.project.id)
         issue = file.container
         next if !tracker_id.nil? && issue.tracker_id != tracker_id.to_i
         db_count += 1
@@ -66,13 +73,18 @@ END_DESC
         file_count +=1
 
         if file.container_type == "Issue"
-          path = container.alien_files_folder_url(false)
+          diskdir = file.container.alien_files_folder_url(false)
         else
-          path = file.getpathforothers(file.project)
+          diskdir = file.getpathforothers(file.project)
         end
+
+        path = "#{target}/#{diskdir}"
 
         if action == 'list'
           puts "#{src} to be moved to #{path}"
+        elsif action == 'update'
+          Attachment.where(:id => file.id).update_all(:disk_directory => diskdir, :file_server_id => fileserverid)
+          update_count += 1
         else
           begin
             FileUtils.mkdir_p(path) unless File.exists? path
@@ -91,7 +103,7 @@ END_DESC
         end
       end
     end
-    puts "in database: #{db_count}\nfound      : #{file_count}\ncopied     :#{copy_count}\ndeleted    : #{del_count}\n"
+    puts "in database: #{db_count}\nfound\t:\t#{file_count}\ncopied\t:\t#{copy_count}\ndeleted\t:\t#{del_count}\nupdated\t:\t#{update_count}\n"
   end
 
   desc  <<-END_DESC
