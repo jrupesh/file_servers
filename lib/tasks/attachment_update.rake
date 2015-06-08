@@ -1,12 +1,50 @@
 namespace :fileserver do
 
   desc  <<-END_DESC
-Checks attachments on FTP File server, And updates the path if not available.
+Checks attachments on Redmine Storage, If the attachment is on FTP File server moves it to a temporary directory specified.
+Which can be deleted later on, after verification.
 Example:
-  rake fileserver:check_attachment RAILS_ENV="production"
+  rake fileserver:attachment_cleanup project_ids="1,2,3" temp=/tmp/REDMINE [action=dryrun] RAILS_ENV="production"
 END_DESC
-  task :check_attachment => :environment do
+  task :attachment_cleanup => :environment do
+    target = ENV['temp']
+    abort("Target folder not specified.") if target.nil?
 
+    project_ids = ENV['projects']
+    abort("Source project id not specified.") if project_ids.nil?
+    project_id = project_ids.split(",").map(&:to_i)
+
+    action = ENV['action'] || "all"
+
+    db_count   = 0
+    nofile_count = 0
+    move_count = 0
+    Attachment.where(:file_server_id != nil ).includes(:container).all.find_in_batches(batch_size: 1000, start: 0 ) do |batch|
+      batch.each do |file|
+        next if file.project.nil? || !project_id.include?(file.project.id)
+
+        db_count += 1
+        src = file.diskfile
+        if !File.exists? src
+          nofile_count += 1
+          next
+        end
+        path = "#{target}/#{File.dirname(src)}"
+        if action == "dryrun"
+          puts "Local file found #{src} will be moved to #{path}\n"
+        else
+          begin
+            FileUtils.mkdir_p(path) unless File.exists? path
+            FileUtils.copy_entry(src,"#{path}/#{file.disk_filename}",true)
+            FileUtils.rm(src)
+            move_count += 1
+          rescue
+            puts "failed to move #{src} in #{path} (copy failed or target folder could not be created\n"
+          end
+        end
+      end
+    end
+    puts "in database: #{db_count}\nFTP files count\t:\t#{nofile_count}\nDuplicated\t:\t#{move_count}\n"
   end
 
   desc 'Move attachments from APP Server to the FTP File server.'
@@ -25,13 +63,16 @@ Example:
   action : if 'list', files to be moved/copied are just listed
            if 'move', files will be removed from redmine files folder after the copy
            if 'copy', files are just copied and not removed from redmine files folder
+           if 'update' the attachment is updated with the file server reference.
 
 Procedure to migrate a project from local redmine folder to FTP server:
-  1/ Copy files to temporary folder by running script in 'copy' mode
-  2/ Copy files from temporary to FTP folder (use scp -p -r)
-  3/ Activate FTP server for project in Redmine console
-  4/ Remove files from local redmine folder by running script in 'move' mode
-  5/ Delete temporary folder
+  1/ Activate FTP server for project in Redmine console
+  2/ Copy files to temporary folder by running script in 'copy' mode
+  3/ Copy files from temporary to FTP folder (use scp -p -r)
+  4/ Update the attachments by running the script in 'update' mode.
+  5/ Remove files from local redmine folder by running script in 'move' mode
+  6/ Delete temporary folder
+
 END_DESC
 
   task :move_files_out => :environment do
@@ -57,14 +98,12 @@ END_DESC
     update_count  = 0
     Attachment.includes(:container).all.find_in_batches(batch_size: 1000, start: 0 ) do |batch|
       batch.each do |file|
-        # next if file.container_type != "Issue"
-        next if !file.file_server_id.nil?
+        next if !file.file_server_id.nil? && action == "update"
         next if file.project.nil? || !project_id.include?(file.project.id)
         issue = file.container
         next if !tracker_id.nil? && issue.tracker_id != tracker_id.to_i
         db_count += 1
 
-        # src = "#{RAILS_ROOT}/files/#{file.disk_filename}"
         src = file.diskfile
         if !File.exists? src
           puts "file not found: #{file.filename} ticket #{issue.id}"

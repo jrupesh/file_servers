@@ -194,7 +194,6 @@ module FileServers
 
           if gproject.has_file_server?
             logger.debug("FILESERVER : After save attachment : Project has file server.")
-            f = {}
             if context.class.name == "Issue"
               path = context.alien_files_folder_url(false)
               logger.debug("FILESERVER : diskfile #{disk_filename} : #{diskfile}.")
@@ -206,7 +205,6 @@ module FileServers
                 #This happens when calling through API.
                 context.gproject.file_server.upload_file diskfile, path, ftp_filename
                 File.delete(diskfile)
-                f = { :file_server_id => gproject.file_server.id }
               else
                 context.move_to_alien_files_folder(ftp_relative_path,path,ftp_filename)
               end
@@ -215,15 +213,14 @@ module FileServers
               file_server.make_directory path
               file_server.move_file_to_dir("#{disk_directory}/#{ftp_filename}", "#{path}/#{ftp_filename}")
             end
-            # content_type = Redmine::MimeType.of(filename) || "application/octet-stream" if filename.present?
-
-            # update_hash = {:disk_directory => path, :content_type => content_type }.merge(f)
-            # Attachment.update_all( update_hash ,
-            #                       {:id => self.id})
             Attachment.where(:id => self.id).update_all(:disk_directory => path) if disk_directory != path
-            # self.disk_directory = path
-          elsif Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on" && context.class.name == "Issue"
-            path = context.build_relative_path
+
+          elsif Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on"
+            if context.class.name == "Issue"
+              path = context.build_relative_path
+            else
+              path = getpathforothers(gproject)
+            end
             dir = File.join(self.class.storage_path, path.to_s )
             if disk_filename.present? && File.exist?(diskfile) && dir != File.dirname(self.diskfile)
               FileUtils.mkdir_p(dir) unless File.directory?(dir)
