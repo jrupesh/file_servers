@@ -57,4 +57,7 @@ Rails.configuration.to_prepare do
     ApplicationHelper.send(:include, FileServers::Patches::ApplicationHelperPatch)
   end
 
+  unless AttachmentsHelper.included_modules.include? FileServers::Patches::AttachmentsHelperPatch
+    AttachmentsHelper.send(:include, FileServers::Patches::AttachmentsHelperPatch)
+  end
 end
