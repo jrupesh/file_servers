@@ -3,10 +3,6 @@
   <div class='flash error'><%= @scan_result[:error] %></div>
 <% end %>
 
-<% if container.respond_to?(:project) && container.project.has_file_server? && ( %w"Message Board Issue".include?( container.class.name ) == false ) %>
-  <%= render :partial => 'attachments/ftpscanbrowse', :locals => { :container => container } %>
-<% end %>
-
 <div class="contextual">
   <%= link_to image_tag('edit.png'),
         container_attachments_edit_path(container),

@@ -1,8 +1,6 @@
 module FileServers
   module Hooks
 		class IssueFileServerHookListener < Redmine::Hook::ViewListener
-      render_on :view_issues_show_description_bottom, :partial => "attachments/ftpscanbrowse"
-
       def view_projects_form(context = { })
         project = context[:project]
         f       = context[:form]
