@@ -96,7 +96,8 @@ module FileServers
             self.attachments.each do |att|
               if !files.keys.include?(att.disk_filename) && att.file_server_id == self.project.file_server_id &&
                   att.disk_directory == path
-                journal.journalize_attachment(att, :removed) if !journal.nil?
+                journal = self.init_journal(User.current) if journal.nil?
+                journal.journalize_attachment(att, :removed)
                 Attachment.destroy(att)
                 result[:changed] = true;
               end
