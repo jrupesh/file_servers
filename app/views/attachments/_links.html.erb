@@ -16,7 +16,7 @@
                 :id => attachment, :filename => attachment.filename %>
   <% end %>
   <%= h(" - #{attachment.description}") unless attachment.description.blank? %>
-  <span class="size">(<%= number_to_human_size attachment.filesize %>)</span>
+  <span class="size">(<%= Attachment::FOLDER_FILESIZE == attachment.filesize ? l(:label_folder) : number_to_human_size(attachment.filesize) %>)</span>
   <% if options[:deletable] %>
     <%= link_to image_tag('delete.png'), attachment_path(attachment),
                                          :data => {:confirm => l(:text_are_you_sure)},

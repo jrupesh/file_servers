@@ -9,6 +9,7 @@ module FileServers
 
         base.class_eval do
           unloadable # Send unloadable so it will not be unloaded in development
+          base.const_set('FOLDER_FILESIZE',1)
 
           belongs_to          :file_server
 

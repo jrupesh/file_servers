@@ -5,7 +5,7 @@
               :id => attachment, :filename => attachment.filename %>
 <% end %>
 <%= h(" - #{attachment.description}") unless attachment.description.blank? %>
-<span class="size">(<%= number_to_human_size attachment.filesize %>)</span>
+<span class="size">(<%= Attachment::FOLDER_FILESIZE == attachment.filesize ? l(:label_folder) : number_to_human_size(attachment.filesize) %>)</span>
 <% if options[:deletable] %>
   <%= link_to image_tag('delete.png'), attachment_path(attachment),
                                        :data => {:confirm => l(:text_are_you_sure)},
@@ -17,5 +17,5 @@
   <span class="author"><%= h(attachment.author) %>, <%= format_time(attachment.created_on) %></span>
 <% end %>
 <%= " (#{l(:manually_uploaded)})" if attachment.author_id == 0 %>
-<%= image_tag('/plugin_assets/file_servers/images/new.png') if @scan_result && @scan_result[:new].include?(attachment) %> 
+<%= image_tag('/plugin_assets/file_servers/images/new.png') if @scan_result && @scan_result[:new].include?(attachment) %>
 </p>

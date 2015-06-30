@@ -109,7 +109,11 @@ class FileServer < ActiveRecord::Base
       ftp.nlst.each do |file|
         logger.debug("scan_directory File - #{file}")
         if !attched_files.include? file
-          files[file] = ftp.size(file)
+          begin
+            files[file] = ftp.size(file) # The command fails to get size of the directory.
+          rescue
+            files[file] = Attachment::FOLDER_FILESIZE # Assume its a directory.
+          end
           logger.debug("scan_directory File Size - #{files[file]}")
         else
           files[file] = 0 # Skip getting file size

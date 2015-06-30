@@ -38,3 +38,4 @@ en:
 
   error_file_server_scan: FTP Server scan failed.
   success_file_server_scan: FTP Server scan completed.
+  label_folder: Folder
