@@ -6,6 +6,7 @@ en:
   field_host: Host
   field_port: Port
   field_autoscan: Automatic scan
+  field_ftp_active: Active transfer mode
 
   field_file_server: FTP File server
   label_file_server: File server

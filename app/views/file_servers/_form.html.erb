@@ -19,6 +19,8 @@
     <p><%= f.password_field :password, :value => !@file_server.new_record? ? '********' : ''%></p>
     <p><%= f.check_box :autoscan %></p>
     <p><%= f.check_box :is_public %></p>
+
+    <p><%= f.check_box :ftp_active %></p>
   </div>
   <%= submit_tag !@file_server.new_record? ? l(:button_save) : l(:button_add) %>
 </div>

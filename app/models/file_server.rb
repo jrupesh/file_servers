@@ -5,6 +5,8 @@ class FileServer < ActiveRecord::Base
   has_many :projects, :dependent => :nullify
   has_many :attachment, :dependent => :nullify
 
+  store :format_store
+
   PROTOCOL_FTP = 0
 
   PROTOCOLS = { PROTOCOL_FTP => { :name => "ftp", :label => :label_file_server_ftp, :order => 1}
@@ -21,7 +23,7 @@ class FileServer < ActiveRecord::Base
   validates_length_of :password, :maximum => 40
   validates_inclusion_of :protocol, :in => PROTOCOLS.keys
 
-  attr_accessible :name, :protocol, :address, :port, :root, :login, :password, :autoscan, :is_public, :project_ids,
+  attr_accessible :name, :protocol, :address, :port, :root, :login, :password, :autoscan, :is_public, :project_ids, :ftp_active,
             :if => lambda {|project, user| user.admin? }
 
   require 'net/ftp'
@@ -44,6 +46,18 @@ class FileServer < ActiveRecord::Base
 
   def type_label
     l(PROTOCOLS[self.protocol ||= PROTOCOLS.keys[0]][:label])
+  end
+
+  def is_passive?
+    !ftp_active
+  end
+
+  def ftp_active
+    format_store[:ftp_active] == '1'
+  end
+
+  def ftp_active=(val)
+    format_store[:ftp_active] = val
   end
 
   def ftpurl_for(relative_path,full,root_included=false)
@@ -103,7 +117,7 @@ class FileServer < ActiveRecord::Base
         ftp.chdir path
       end
 
-      ftp.passive = true
+      ftp.passive = true if is_passive?
       # files = ftp.nlst
 
       ftp.nlst.each do |file|
@@ -133,7 +147,7 @@ class FileServer < ActiveRecord::Base
     begin
       make_directory(target_directory_path,ftp,false)
       ftp.chdir target_directory_path
-      ftp.passive = true
+      ftp.passive = true if is_passive?
       ftp.putbinaryfile source_file_path,target_file_name
       ret = true
     rescue
@@ -243,7 +257,7 @@ class FileServer < ActiveRecord::Base
           end
           resp = ftp.login(self.login, self.decrypted_password)
           logger.debug("ftp_connection - #{resp}")
-          ftp.passive = true
+          ftp.passive = true if is_passive?
         rescue Timeout::Error => e
           ftp = nil
         end
