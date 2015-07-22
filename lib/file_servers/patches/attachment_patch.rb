@@ -238,8 +238,8 @@ module FileServers
         end
 
         def ftpfileexists?
-          (self.file_server.nil?) ? return : fs = self.file_server
-          fs.ftp_file_exists?(disk_directory.to_s, disk_filename.to_s)
+          return false if self.file_server.nil?
+          self.file_server.ftp_file_exists?(disk_directory.to_s, disk_filename.to_s)
         end
 
         def hasfileinftp?

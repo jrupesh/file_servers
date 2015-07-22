@@ -173,8 +173,8 @@ END_DESC
     project = Project.find_by_identifier(target_project_identifier)
     fail("target project does not exist") if project.nil?
 
-    attachment = Attachment.find_by_filename(source_name)
-    attachment = Attachment.find_by_disk_filename(source_name) if attachment.nil?
+    attachment = Attachment.find_by_disk_filename(source_name)
+    attachment = Attachment.find_by_filename(source_name) if attachment.nil?
 
     abort("Attachment not found") if attachment.nil?
 
