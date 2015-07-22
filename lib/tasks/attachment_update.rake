@@ -4,42 +4,55 @@ namespace :fileserver do
 Checks attachments on Redmine Storage, If the attachment is on FTP File server moves it to a temporary directory specified.
 Which can be deleted later on, after verification.
 Example:
-  rake fileserver:attachment_cleanup project_ids="1,2,3" temp=/tmp/REDMINE [action=dryrun] RAILS_ENV="production"
+  rake fileserver:attachment_cleanup temp=/tmp/REDMINE [action=dryrun|delete] RAILS_ENV="production"
 END_DESC
   task :attachment_cleanup => :environment do
     target = ENV['temp']
     abort("Target folder not specified.") if target.nil?
 
-    project_ids = ENV['projects']
-    abort("Source project id not specified.") if project_ids.nil?
-    project_id = project_ids.split(",").map(&:to_i)
+    action = ENV['action']
+    abort("Action not specified.") if action.nil?
 
-    action = ENV['action'] || "all"
+    # Get list of file names from the redmine storage.
+    search_path = Attachment.storage_path || './files'
+    files = Dir["#{search_path}/**/*"]
+
+    disk_filenames = []
+    disk_filenames_path = {}
+    files.each do |f_path|
+      next if File.directory?(f_path)
+      f_name = File.basename("#{f_path}")
+      disk_filenames << f_name
+      disk_filenames_path[f_name] = f_path
+    end
 
     db_count   = 0
     nofile_count = 0
     move_count = 0
-    Attachment.where(:file_server_id != nil ).includes(:container).all.find_in_batches(batch_size: 1000, start: 0 ) do |batch|
-      batch.each do |file|
-        next if file.project.nil? || !project_id.include?(file.project.id)
 
+    Attachment.where("file_server_id is not NULL and disk_filename in (?)", disk_filenames ).all.find_in_batches( batch_size: 1000, start: 0 ) do |batch|
+      batch.each do |file|
         db_count += 1
-        src = file.diskfile
-        if !File.exists? src
+
+        redmine_src = disk_filenames_path[file.disk_filename]
+
+        if !File.exists? redmine_src
           nofile_count += 1
           next
         end
-        path = "#{target}/#{File.dirname(src)}"
+
+        path =  File.join( target, redmine_src.gsub(search_path, "") )
+
         if action == "dryrun"
-          puts "Local file found #{src} will be moved to #{path}\n"
+          puts "Local file found #{redmine_src} will be moved to #{path}\n"
         else
           begin
-            FileUtils.mkdir_p(path) unless File.exists? path
-            FileUtils.copy_entry(src,"#{path}/#{file.disk_filename}",true)
-            FileUtils.rm(src)
+            FileUtils.mkdir_p(File.dirname(path)) unless File.exists? File.dirname(path)
+            FileUtils.copy_entry(redmine_src,path,true)
+            FileUtils.rm(redmine_src)
             move_count += 1
           rescue
-            puts "failed to move #{src} in #{path} (copy failed or target folder could not be created\n"
+            puts "failed to move #{redmine_src} to #{path} (copy failed or target folder could not be created\n"
           end
         end
       end
