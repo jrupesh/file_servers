@@ -211,8 +211,10 @@ module FileServers
               end
             else
               path = getpathforothers(gproject)
-              file_server.make_directory path
-              file_server.move_file_to_dir("#{disk_directory}/#{ftp_filename}", "#{path}/#{ftp_filename}")
+              if disk_directory != path
+                file_server.make_directory path
+                file_server.move_file_to_dir("#{disk_directory}/#{ftp_filename}", "#{path}/#{ftp_filename}")
+              end
             end
             Attachment.where(:id => self.id).update_all(:disk_directory => path) if disk_directory != path
 
