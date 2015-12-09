@@ -29,7 +29,7 @@ module FileServers
 
             uri2 = URI.parse(encode_uri)
             uri2.scheme ||= 'ftp'
-			      link_to(h(attachment.filename), uri2.to_s, :target => "_blank", :class => 'icon icon-attachment' )
+			      link_to(h(attachment.filename), uri2.to_s, :target => "_blank", :download => "#{attachment.filename}", :class => 'icon icon-attachment' )
 			    else
 			    	link_to_attachment_without_ftp(attachment, options)
 			    end
