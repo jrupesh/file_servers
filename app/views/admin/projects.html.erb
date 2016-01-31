@@ -29,6 +29,9 @@
   <% if Project.method_defined? :enable_egs %>
     <th><%=l(:label_egs)%></th>
   <% end %>
+  <% if Project.method_defined? :view_template_for_issues_enabled %>
+    <th><%=l(:label_view_templates)%></th>
+  <% end %>
   <th></th>
   </tr></thead>
   <tbody>
@@ -43,6 +46,11 @@
   <% end %>
   <% if project.respond_to?(:enable_egs) %>
     <td align=center style='font-size: 9px;font-weight: bold;font-style: oblique;'><%= h project.enable_egs == true ? "X" : "" %></td>
+  <% end %>
+  <% if project.respond_to?(:view_template_for_issues_enabled) %>
+    <td align=center style='font-size: 9px;font-weight: bold;font-style: oblique;'>
+      <%= project.view_template_for_issues_enabled? ? link_to('X', settings_project_path(project, :tab => :view_templates)) : "" %>
+    </td>
   <% end %>
   <td class="buttons">
     <%= link_to(l(:button_archive), archive_project_path(project, :status => params[:status]), :data => {:confirm => l(:text_are_you_sure)}, :method => :post, :class => 'icon icon-lock') unless project.archived? %>
