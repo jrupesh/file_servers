@@ -99,7 +99,8 @@ class FileServer < ActiveRecord::Base
         end
         ftp.close if ftp_close
         ret = true
-      rescue
+      rescue Exception => e
+        logger.debug("FTP FILESERVER : make_directory - #{e}")
       end
     end
     ret
@@ -133,7 +134,8 @@ class FileServer < ActiveRecord::Base
           files[file] = 0 # Skip getting file size
         end
       end
-    rescue
+    rescue Exception => e
+      logger.debug("FTP FILESERVER : scan_directory - #{e}")
     end
     ftp.close
     files
@@ -150,7 +152,8 @@ class FileServer < ActiveRecord::Base
       ftp.passive = true if is_passive?
       ftp.putbinaryfile source_file_path,target_file_name
       ret = true
-    rescue
+    rescue Exception => e
+      logger.debug("FTP FILESERVER : upload_file - #{e}")
     end
     ftp.close
     ret
@@ -165,7 +168,8 @@ class FileServer < ActiveRecord::Base
       ftp.chdir file_directory
       ftp.delete file_name
       ret = true
-    rescue
+    rescue Exception => e
+      logger.debug("FTP FILESERVER : delete_file - #{e}")
     end
     ftp.close
     ret
@@ -191,6 +195,8 @@ class FileServer < ActiveRecord::Base
     begin
       make_directory(target_directory_path,ftp,false)
       ftp.storbinary("STOR " + target_file_name, f, 8192)
+    rescue Exception => e
+      logger.debug("FTP FILESERVER : puttextcontent - #{e}")
     ensure
       f.close
       ftp.close
@@ -207,8 +213,8 @@ class FileServer < ActiveRecord::Base
       logger.debug("move_file_to_dir source_file_path #{source_file_path} --target_file_path - #{target_file_path}")
       ftp.rename(source_file_path,target_file_path)
       ret = true
-    rescue
-      logger.debug("move_file_to_dir ERROR")
+    rescue Exception => e
+      logger.debug("FTP FILESERVER : move_file_to_dir - #{e}")
     end
     ftp.close
     ret
@@ -221,7 +227,8 @@ class FileServer < ActiveRecord::Base
     ret = ""
     begin
       ret = ftp.getbinaryfile(ftpremotefile, localfile)
-    rescue
+    rescue Exception => e
+      logger.debug("FTP FILESERVER : readftpFile - #{e}")
     end
     ftp.close
     ret
@@ -236,7 +243,8 @@ class FileServer < ActiveRecord::Base
     begin
       ftp.chdir(file_directory)
       ret = true if not ftp.nlst(filename).empty?
-    rescue
+    rescue Exception => e
+      logger.debug("FTP FILESERVER : ftp_file_exists - #{e}")
     end
     ftp.close
     ret
@@ -256,9 +264,10 @@ class FileServer < ActiveRecord::Base
             end
           end
           resp = ftp.login(self.login, self.decrypted_password)
-          logger.debug("ftp_connection - #{resp}")
+          logger.debug("FTP FILESERVER : ftp_connection - #{resp}")
           ftp.passive = true if is_passive?
         rescue Timeout::Error => e
+          logger.debug("FTP FILESERVER : ftp_connection - #{e}")
           ftp = nil
         end
       rescue

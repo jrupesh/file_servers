@@ -19,6 +19,8 @@ module FileServers
           alias_method_chain  :files_to_final_location, :ftp
           alias_method_chain  :target_directory, :organize_files
           alias_method_chain  :readable?, :ftp
+          alias_method_chain  :delete_from_disk, :ftp
+
           # alias_method_chain  :thumbnail, :esiftp
 
           cattr_accessor      :context_obj
@@ -61,6 +63,14 @@ module FileServers
       end
 
       module InstanceMethods
+
+        def delete_from_disk_with_ftp
+          unless self.file_server.nil?
+            delete_from_ftp
+          else
+            delete_from_disk_without_ftp
+          end
+        end
 
         def thumbnail_flag
           @thumbnail_flag ||= false
@@ -131,7 +141,7 @@ module FileServers
 
         def delete_from_ftp
           logger.debug("FILESERVER : delete_from_ftp")
-          if !self.file_server.nil? && Attachment.where("disk_filename = ? AND id <> ?", disk_filename, id).empty?
+          if !self.file_server.nil? && disk_filename.present? && Attachment.where("disk_filename = ? AND id <> ?", disk_filename, id).empty?
             ret = self.file_server.delete_file(self.disk_directory, ftp_filename)
           end
         end

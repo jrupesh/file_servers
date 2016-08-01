@@ -49,7 +49,7 @@
   <% end %>
   <% if project.respond_to?(:view_template_for_issues_enabled) %>
     <td align=center style='font-size: 9px;font-weight: bold;font-style: oblique;'>
-      <%= project.view_template_for_issues_enabled? ? link_to('X', settings_project_path(project, :tab => :view_templates)) : "" %>
+      <%= project.view_template_for_issues_enabled? ? project.view_template_for_issues.present? ? link_to('L', settings_project_path(project, :tab => :view_templates)) : 'G' : "" %>
     </td>
   <% end %>
   <td class="buttons">
