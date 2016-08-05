@@ -8,7 +8,8 @@ module FileServers
 
         base.class_eval do
           unloadable
-          after_create :create_alien_files_folder
+          # after_create :create_alien_files_folder
+          alias_method_chain :send_notification, :esi
         end
       end
 
@@ -24,6 +25,13 @@ module FileServers
           path += self.id.to_s
         end
 
+        def send_notification_with_esi
+          if self.project.has_file_server?
+            attachments.any? ? attachments.reload : create_alien_files_folder
+          end
+          send_notification_without_esi
+        end
+
         def alien_files_folder_url(full)
           @path.blank? ? @path = build_relative_path : @path
           logger.debug("alien_files_folder_url @path #{@path} ---")
@@ -33,11 +41,12 @@ module FileServers
         def create_alien_files_folder
           return true unless self.project.has_file_server?
           folder_path = alien_files_folder_url(false)
+          logger.debug("create_alien_files_folder --- folder_path #{folder_path}")
           self.project.file_server.make_directory folder_path
         end
 
         def move_to_alien_files_folder(source_file,folder_path,file_name)
-          return true unless self.project.has_file_server?
+          return true unless (self.project.has_file_server? && source_file != folder_path)
           # folder_path = alien_files_folder_url(false)
           logger.debug("move_to_alien_files_folder source_file - #{source_file},folder_path - #{folder_path}, file_name - #{file_name}")
           self.project.file_server.make_directory folder_path

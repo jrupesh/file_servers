@@ -16,9 +16,12 @@ module FileServers
       module InstanceMethods
 
       	def link_to_attachment_with_ftp(attachment, options={})
-			    if !attachment.file_server.nil?
+			    if attachment.file_server.present?
+            mailer_path = (options[:only_path] == false ? false : true)
+            Rails.logger.debug("Mailer path #{options[:only_path]}, #{mailer_path}")
+
 			      url = attachment.file_server.ftpurl_for(attachment.disk_directory,
-			      				true ,root_included=true) + "/" + attachment.disk_filename
+			      				true ,root_included=true, show_credentials=mailer_path) + "/" + attachment.disk_filename
 
             # RUJ : Change to Regex later. Temp fix. To manuall check.
             if url.include?("[") || url.include?("]")

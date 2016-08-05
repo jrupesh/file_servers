@@ -60,15 +60,17 @@ class FileServer < ActiveRecord::Base
     format_store[:ftp_active] = val
   end
 
-  def ftpurl_for(relative_path,full,root_included=false)
+  def ftpurl_for(relative_path,full,root_included=false,show_credentials=true)
 
     url = []
     if full
       ftp_credentials = ""
       ftp_credentials += "ftp://"
-      ftp_credentials += self.login if self.login
-      ftp_credentials += ":" + self.password if self.password && self.is_public
-      ftp_credentials += "@" if self.login || (self.password && self.is_public)
+      if show_credentials
+        ftp_credentials += self.login if self.login
+        ftp_credentials += ":" + self.password if self.password && self.is_public
+        ftp_credentials += "@" if self.login || (self.password && self.is_public)
+      end
       ftp_credentials += self.address
       ftp_credentials += ":" + self.port.to_s unless self.port.nil?
       url << ftp_credentials
@@ -206,6 +208,7 @@ class FileServer < ActiveRecord::Base
   end
 
   def move_file_to_dir(source_file_path,target_file_path)
+    return unless source_file_path != target_file_path
     ftp = ftp_connection
     return if ftp.nil?
     ret = false
