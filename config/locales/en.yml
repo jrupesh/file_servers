@@ -6,7 +6,10 @@ en:
   field_host: Host
   field_port: Port
   field_autoscan: Automatic scan
+  field_ftp_active: Active transfer mode
 
+  label_loc_backup_path: File backup path
+  em_loc_backup_path: "For specific cases (diff, images for Edge browsers), Files are stored on Server. Cleanup files hyperlink on file server page clears locally downloaded files. A backup is taken if the file does not exist on the FTP folder."
   field_file_server: FTP File server
   label_file_server: File server
   label_file_server_plural: File servers
@@ -18,6 +21,12 @@ en:
   label_file_server_no_project: This file server is not activated for any project
   label_file_server_projects: This file server is currently activated for these projects
   label_file_server_current: current file server
+  label_dry_clean_up: Dry clean up
+  label_clean_up: Clean up
+  label_db_count: Total files found on Server
+  label_nofile_count: Invalid files
+  label_move_count: Files moved
+  label_remove_count: Files removed
 
   label_scan_mode: Scan mode
   label_scan_auto: Automatic

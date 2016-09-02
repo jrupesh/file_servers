@@ -1,4 +1,9 @@
+<div class="contextual">
+  <%= link_to l(:label_dry_clean_up), fs_loc_move_files_path(@file_server), :method => 'post', :remote => true, :class => 'icon icon-del' %>
+</div>
+
 <%= title [l(:label_file_server_plural), file_servers_path], @file_server.name %>
+
 
 <%= labelled_form_for @file_server do |f| %>
 <%= render :partial => 'form', :locals => { :f => f } %>

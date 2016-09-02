@@ -52,22 +52,6 @@ class FileServersController < ApplicationController
     redirect_to :action => 'index'
   end
 
-  # def activate_in_project
-  #   file_server = FileServer.find(params[:id])
-  #   project = Project.find(params[:project_id])
-  #   project.file_server = file_server
-  #   project.save
-  #   redirect_to :action => 'edit', :id => file_server
-  # end
-
-  # def deactivate_in_project
-  #   file_server = FileServer.find(params[:id])
-  #   project = Project.find(params[:project_id])
-  #   project.file_server = nil
-  #   project.save
-  #   redirect_to :action => 'edit', :id => file_server
-  # end
-
   private
   def file_server_params
     params.require(:file_server).permit(:name, :protocol, :address, :port, :root, :login, :password, :autoscan, :is_public, :project_ids)

@@ -1,5 +1,7 @@
 <div class="contextual">
 <%= link_to l(:label_file_server_new), new_file_server_path, :class => 'icon icon-add' %>
+<%#= link_to l(:label_dry_clean_up), file_server_cleanup_path(:type => 'dry'), :method => 'post', :remote => true, :class => 'icon icon-del' %>
+<%#= link_to l(:label_clean_up), file_server_cleanup_path(:type => 'delete'), :method => 'post', :remote => true, :class => 'icon icon-del' %>
 </div>
 
 <h2><%=l(:label_file_server_plural)%></h2>

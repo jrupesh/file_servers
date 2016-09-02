@@ -1,18 +1,18 @@
 <p>
   <label><%= l(:organize_uploaded_files) %></label>
-  <%= check_box_tag 'settings[organize_uploaded_files]', "on", settings['organize_uploaded_files'] %>
+  <%= check_box_tag 'settings[organize_uploaded_files]', "on", settings[:organize_uploaded_files] %>
   <br />
   <em><%= l(:organize_ftp_uploaded_files) %></em>
 </p>
 <p>
   <label><%= l(:organize_uploaded_issue_files) %></label>
-  <%= check_box_tag 'settings[organize_uploaded_issue_files]', "on", settings['organize_uploaded_issue_files'] %>
+  <%= check_box_tag 'settings[organize_uploaded_issue_files]', "on", settings[:organize_uploaded_issue_files] %>
   <br />
   <em><%= l(:organize_uploaded_issue_files_desc) %></em>
 </p>
 <p>
   <label><%= l(:selection_on_project_creation) %></label>
-  <%= check_box_tag 'settings[selection_on_project_creation]', "on", settings['selection_on_project_creation'] %>
+  <%= check_box_tag 'settings[selection_on_project_creation]', "on", settings[:selection_on_project_creation] %>
   <br />
   <em><%= l(:em_selection_on_project_creation) %></em>
 </p>

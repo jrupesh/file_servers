@@ -19,6 +19,8 @@ module FileServers
           alias_method_chain  :files_to_final_location, :ftp
           alias_method_chain  :target_directory, :organize_files
           alias_method_chain  :readable?, :ftp
+          alias_method_chain  :delete_from_disk, :ftp
+
           # alias_method_chain  :thumbnail, :esiftp
 
           cattr_accessor      :context_obj
@@ -62,6 +64,14 @@ module FileServers
 
       module InstanceMethods
 
+        def delete_from_disk_with_ftp
+          unless self.file_server.nil?
+            delete_from_ftp
+          else
+            delete_from_disk_without_ftp
+          end
+        end
+
         def thumbnail_flag
           @thumbnail_flag ||= false
         end
@@ -74,11 +84,18 @@ module FileServers
           ctx
         end
 
+        def get_context_object
+          context = self.container || self.class.get_context
+          obj = context.is_a?(Hash) ? context[:object] : context
+          logger.debug("FILESERVER : Getting Context Object #{obj}")
+          obj
+        end
+
         def files_to_final_location_with_ftp
           logger.debug("FILESERVER : Save files to Final location.")
           project = get_project
 
-          if !project.nil? && project.has_file_server? && Setting.plugin_file_servers["organize_uploaded_files"] == "on" &&
+          if project.present? && project.has_file_server? && Setting.plugin_file_servers["organize_uploaded_files"] == "on" &&
             @temp_file && (@temp_file.size > 0)
 
             self.file_server = project.file_server
@@ -115,9 +132,19 @@ module FileServers
           logger.debug("FILESERVER : get_path_from_context_project")
           path = [nil]
 
+          project = get_project
           if ctx.nil? && pid.nil?
             ctx = get_context_class_name
-            project = get_project
+            obj = get_context_object
+            if obj.present? && !obj.is_a?(String) && obj.id.present?
+              if ctx == "Issue"
+                path = project.present? && project.has_file_server? ? obj.alien_files_folder_url(false) : obj.build_relative_path
+              else
+                path = getpathforothers(project, obj)
+              end
+              logger.debug("FILESERVER : get_path_from_context_project path #{path}")
+              return path
+            end
             pid = project.identifier if !project.nil?
           end
 
@@ -131,7 +158,7 @@ module FileServers
 
         def delete_from_ftp
           logger.debug("FILESERVER : delete_from_ftp")
-          if !self.file_server.nil? && Attachment.where("disk_filename = ? AND id <> ?", disk_filename, id).empty?
+          if !self.file_server.nil? && disk_filename.present? && Attachment.where("disk_filename = ? AND id <> ?", disk_filename, id).empty?
             ret = self.file_server.delete_file(self.disk_directory, ftp_filename)
           end
         end
@@ -172,16 +199,24 @@ module FileServers
         end
 
         # Populates the path for all non issues.
-        def getpathforothers(proj)
+        def getpathforothers(proj, obj=nil)
           path = [nil]
           path << proj.file_server.root if proj.file_server && !proj.file_server.root.blank?
           path << proj.identifier
-          if container.class.name == 'Message'
-            path << "Board"
-            path << container.board_id
+
+          ctx = container.nil? ? obj : container
+          if ctx.present?
+            if ctx.class.name == 'Message'
+              path << "Board"
+              path << ctx.board_id
+            else
+              ctx.class.name == "WikiPage" ? path << "Wiki" : path << ctx.class.name
+              path << ctx.id
+            end
+            logger.debug("FILESERVER : getpathforothers : #{path}")
           else
-            container.class.name == "WikiPage" ? path << "Wiki" : path << container.class.name
-            path << container.id
+            ctx = get_context_class_name
+            path << ctx if ctx.present?
           end
           path.compact.join('/')
         end
@@ -197,22 +232,26 @@ module FileServers
             logger.debug("FILESERVER : After save attachment : Project has file server.")
             if context.class.name == "Issue"
               path = context.alien_files_folder_url(false)
-              logger.debug("FILESERVER : diskfile #{disk_filename} : #{diskfile}.")
-              logger.debug("FILESERVER : path : #{path}.")
+              if disk_directory != path
+                logger.debug("FILESERVER : diskfile #{disk_filename} : #{diskfile}.")
+                logger.debug("FILESERVER : path : #{path}.")
 
-              if disk_filename.present? && File.exist?(diskfile)
-                logger.debug("FILESERVER : After save attachment : File exists on App Server.")
-                #If file exists in the local path then move to ftp.
-                #This happens when calling through API.
-                context.gproject.file_server.upload_file diskfile, path, ftp_filename
-                File.delete(diskfile)
-              else
-                context.move_to_alien_files_folder(ftp_relative_path,path,ftp_filename)
+                if disk_filename.present? && File.exist?(diskfile)
+                  logger.debug("FILESERVER : After save attachment : File exists on App Server.")
+                  #If file exists in the local path then move to ftp.
+                  #This happens when calling through API.
+                  context.gproject.file_server.upload_file diskfile, path, ftp_filename
+                  File.delete(diskfile)
+                else
+                  context.move_to_alien_files_folder(ftp_relative_path,path,ftp_filename)
+                end
               end
             else
               path = getpathforothers(gproject)
-              file_server.make_directory path
-              file_server.move_file_to_dir("#{disk_directory}/#{ftp_filename}", "#{path}/#{ftp_filename}")
+              if disk_directory != path
+                file_server.make_directory path
+                file_server.move_file_to_dir("#{disk_directory}/#{ftp_filename}", "#{path}/#{ftp_filename}")
+              end
             end
             Attachment.where(:id => self.id).update_all(:disk_directory => path) if disk_directory != path
 
@@ -238,8 +277,8 @@ module FileServers
         end
 
         def ftpfileexists?
-          (self.file_server.nil?) ? return : fs = self.file_server
-          fs.ftp_file_exists?(disk_directory.to_s, disk_filename.to_s)
+          return false if self.file_server.nil?
+          self.file_server.ftp_file_exists?(disk_directory.to_s, disk_filename.to_s)
         end
 
         def hasfileinftp?
@@ -250,16 +289,16 @@ module FileServers
         end
 
         def readftpcontent
-          (self.file_server.nil?) ? return : fs = self.file_server
+          return unless self.file_server.present?
           data = nil
-          if diskfile && File.exist?(diskfile)
-            data = File.new(diskfile, "rb").read
-          else
+          unless File.exist?(diskfile)
             logger.debug("Downloading File : #{disk_directory}/#{disk_filename} to --> #{self.diskfile}")
             FileUtils.mkdir_p(File.dirname(self.diskfile)) unless File.directory?(File.dirname(self.diskfile))
-            fs.readftpFile("#{disk_directory}/#{disk_filename}", self.diskfile)
-            data = File.new(diskfile, "rb").read
+            self.file_server.readftpFile("#{disk_directory}/#{disk_filename}", self.diskfile)
           end
+          loc_file = File.new(diskfile, "rb")
+          data = loc_file.read
+          loc_file.close
           data
         end
 
@@ -294,12 +333,12 @@ module FileServers
 
         private
           def get_project
-            return @project if !@project.nil?
+            return @project if @project.present?
             @project = nil
             @context = self.container || self.class.get_context
-            if !@context.nil?
-              if @context.is_a?(Hash)
-                @project = Project.find(@context[:project]) if (@context.has_key?(:project) && !@context[:project].nil?)
+            if @context.present?
+              if @context.is_a?(Hash) && @context.has_key?(:object) && @context[:object].present?
+                @project = @context[:object].respond_to?(:project) ? @context[:object].project : Project.find(@context[:object])
               elsif @context.respond_to?(:project)
                 @project = @context.project
               else

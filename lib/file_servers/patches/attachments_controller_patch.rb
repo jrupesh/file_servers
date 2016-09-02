@@ -102,22 +102,27 @@ module FileServers
         end
 
         def ftpdownload
+          logger.debug("Attachment has HTTP_USER_AGENT #{request.env['HTTP_USER_AGENT']}")
           return if !@attachment.hasfileinftp?
           logger.debug("Attachment has FTP File.")
           @attachment.instance_variable_set "@thumbnail_flag", true
-          if !@attachment.container.nil? || @attachment.container.is_a?(Version) || @attachment.container.is_a?(Project)
+
+          if @attachment.container.is_a?(Version) || @attachment.container.is_a?(Project)
             @attachment.increment_download
           end
 
-          if stale?(:etag => @attachment.digest)
-            # images are sent inline
-            url = @attachment.file_server.ftpurl_for(@attachment.disk_directory,
-                    true ,root_included=true) + "/" + @attachment.disk_filename
+          url = @attachment.file_server.ftpurl_for(@attachment.disk_directory,
+                true ,root_included=true) + "/" + @attachment.disk_filename
 
-            # send_file url,  :filename => @attachment.filename,
-            #                 :type => detect_content_type(@attachment),
-            #                 :disposition => (@attachment.image? ? 'inline' : 'attachment')
-            redirect_to url
+          if stale?(:etag => @attachment.digest)
+            if request.env['HTTP_USER_AGENT'] =~ /[^\(]*[^\)]Edge\//
+              # images are sent inline
+              send_data @attachment.readftpcontent, :filename => filename_for_content_disposition(@attachment.filename),
+                                      :type => detect_content_type(@attachment),
+                                      :disposition => disposition(@attachment)
+            else
+              redirect_to url
+            end
           end
         end
 
@@ -200,16 +205,16 @@ module FileServers
               if klass == "Topic"
                 klass = "Message"
                 record  = ref[-3].to_i
-                project = if record > 0
-                  "Board".constantize.find(record).project_id
+                object = if record > 0
+                  "Board".constantize.find(record)
                 else
                   ref[0] # we won't have a project AND a record, so this shouldn't fail
                 end
               else
                 # Try to match an id (regardless of whether it'll be valid)
                 record  = ref[-1].to_i
-                project = if record > 0
-                  klass.constantize.find(record).project_id
+                object = if record > 0
+                  klass.constantize.find(record)
                 else
                   ref[0] # we won't have a project AND a record, so this shouldn't fail
                 end
@@ -217,8 +222,8 @@ module FileServers
               # filename = request.env["QUERY_STRING"].scan(/filename=(.*)/).flatten.first
               # path = Attachment.ftp_absolute_path(filename, klass, project)
 
-              Attachment.set_context :class => klass, :project => project
-              logger.debug("Attachment.set_context klass #{klass} project #{project}")
+              Attachment.set_context :class => klass, :object => object
+              logger.debug("Attachment.set_context klass #{klass} object #{object}")
               # Attachment.set_context :class => klass, :project => project, :record => record
               # skip_redirection = true
             end

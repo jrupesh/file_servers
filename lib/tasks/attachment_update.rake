@@ -4,52 +4,128 @@ namespace :fileserver do
 Checks attachments on Redmine Storage, If the attachment is on FTP File server moves it to a temporary directory specified.
 Which can be deleted later on, after verification.
 Example:
-  rake fileserver:attachment_cleanup project_ids="1,2,3" temp=/tmp/REDMINE [action=dryrun] RAILS_ENV="production"
+  rake fileserver:attachment_cleanup temp=/tmp/REDMINE action=dryrun|delete RAILS_ENV="production"
 END_DESC
   task :attachment_cleanup => :environment do
     target = ENV['temp']
     abort("Target folder not specified.") if target.nil?
 
-    project_ids = ENV['projects']
-    abort("Source project id not specified.") if project_ids.nil?
-    project_id = project_ids.split(",").map(&:to_i)
+    action = ENV['action']
+    abort("Action not specified.") if action.nil?
 
-    action = ENV['action'] || "all"
+    # Get list of file names from the redmine storage.
+    search_path = Attachment.storage_path || './files'
+    files = Dir["#{search_path}/**/*"]
+
+    disk_filenames = []
+    disk_filenames_path = {}
+    files.each do |f_path|
+      next if File.directory?(f_path)
+      f_name = File.basename("#{f_path}")
+      disk_filenames << f_name
+      disk_filenames_path[f_name] = f_path
+    end
 
     db_count   = 0
     nofile_count = 0
     move_count = 0
-    Attachment.where(:file_server_id != nil ).includes(:container).all.find_in_batches(batch_size: 1000, start: 0 ) do |batch|
+    remove_count = 0
+    Attachment.where("file_server_id is not NULL and disk_filename in (?)", disk_filenames ).all.find_in_batches( batch_size: 1000, start: 0 ) do |batch|
       batch.each do |file|
-        next if file.project.nil? || !project_id.include?(file.project.id)
-
         db_count += 1
-        src = file.diskfile
-        if !File.exists? src
+
+        redmine_src = disk_filenames_path[file.disk_filename]
+
+        unless File.exists?(redmine_src)
           nofile_count += 1
           next
         end
-        path = "#{target}/#{File.dirname(src)}"
+
+        path =  File.join( target, redmine_src.gsub(search_path, "") )
+
         if action == "dryrun"
-          puts "Local file found #{src} will be moved to #{path}\n"
+          begin
+            unless file.ftpfileexists?
+              move_count += 1
+            end
+            remove_count += 1
+          rescue Exception => e
+            puts "Exception #{e}\n"
+            puts "failed to move #{redmine_src} to #{path} (copy failed or target folder could not be created\n"
+          end
+          puts "Local file found #{redmine_src} will be moved to #{path}\n"
         else
           begin
-            FileUtils.mkdir_p(path) unless File.exists? path
-            FileUtils.copy_entry(src,"#{path}/#{file.disk_filename}",true)
-            FileUtils.rm(src)
-            move_count += 1
-          rescue
-            puts "failed to move #{src} in #{path} (copy failed or target folder could not be created\n"
+            unless file.ftpfileexists?
+              # logger.debug "File not in FTP."
+              FileUtils.mkdir_p(File.dirname(path)) unless File.exists? File.dirname(path)
+              FileUtils.copy_entry(redmine_src,path,true)
+              move_count += 1
+            end
+            FileUtils.rm redmine_src
+            remove_count += 1
+          rescue Exception => e
+            puts "Exception #{e}\n"
+            puts "failed to move #{redmine_src} to #{path} (copy failed or target folder could not be created\n"
           end
         end
       end
     end
-    puts "in database: #{db_count}\nFTP files count\t:\t#{nofile_count}\nDuplicated\t:\t#{move_count}\n"
+    ret = { :db_count => db_count, :nofile_count => nofile_count, :move_count => move_count, :remove_count => remove_count }
+    puts "Total Files : #{ret[:db_count]}\nFiles not found : #{ret[:nofile_count]}\nFiles to be moved : #{ret[:move_count]}\nFiles Deleted : #{ret[:remove_count]}\n"
   end
 
-  desc 'Move attachments from APP Server to the FTP File server.'
+  desc  <<-END_DESC
+  Move attachments from APP Server to the FTP File server.
+Example:
+  rake fileserver:move_attachments file_server=[1] RAILS_ENV="production"
+END_DESC
   task :move_attachments => :environment do
+    file_server_id = ENV['file_server']
+    abort("file_server not specified.") if file_server_id.nil? || file_server_id.to_i > 0
 
+    files_server = FileServer.find(file_server_id)
+    project_ids = files_server.project_ids
+    abort("No Project files to move.") if project_ids.size > 0
+
+    # Get list of file names from the redmine storage.
+    search_path = Attachment.storage_path || './files'
+    files = Dir["#{search_path}/**/*"]
+
+    disk_filenames = []
+    disk_filenames_path = {}
+    files.each do |f_path|
+      next if File.directory?(f_path)
+      f_name = File.basename("#{f_path}")
+      disk_filenames << f_name
+      disk_filenames_path[f_name] = f_path
+    end
+
+    db_count   = 0
+    nofile_count = 0
+    move_count = 0
+    remove_count = 0
+    Attachment.where("file_server_id is NULL and disk_filename in (?)", disk_filenames ).all.find_in_batches( batch_size: 1000, start: 0 ) do |batch|
+      batch.each do |file|
+        # Check if the file is part of the project
+        db_count += 1
+        if file.container.respond_to?(:project_id) && project_ids.include?(file.container.project_id)
+          file.file_server_id = file_server_id
+        elsif file.container.class.name == "Project" && project_ids.include?(file.container.id)
+          file.file_server_id = file_server_id
+        else
+          nofile_count += 1
+          next
+        end
+
+        if file.file_server_id.present?
+          file.save
+          move_count += 1
+        end
+      end
+    end
+    ret = { :db_count => db_count, :nofile_count => nofile_count, :move_count => move_count }
+    puts "Total Files : #{ret[:db_count]}\nFiles not moved : #{ret[:nofile_count]}\nFiles moved : #{ret[:move_count]}\nFiles Deleted : #{ret[:remove_count]}\n"
   end
 
 desc <<-END_DESC
@@ -160,8 +236,8 @@ END_DESC
     project = Project.find_by_identifier(target_project_identifier)
     fail("target project does not exist") if project.nil?
 
-    attachment = Attachment.find_by_filename(source_name)
-    attachment = Attachment.find_by_disk_filename(source_name) if attachment.nil?
+    attachment = Attachment.find_by_disk_filename(source_name)
+    attachment = Attachment.find_by_filename(source_name) if attachment.nil?
 
     abort("Attachment not found") if attachment.nil?
 
