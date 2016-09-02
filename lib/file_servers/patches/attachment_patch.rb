@@ -136,9 +136,9 @@ module FileServers
           if ctx.nil? && pid.nil?
             ctx = get_context_class_name
             obj = get_context_object
-            if obj.present? && !obj.is_a?(String)
+            if obj.present? && !obj.is_a?(String) && obj.id.present?
               if ctx == "Issue"
-                path = obj.build_relative_path
+                path = project.present? && project.has_file_server? ? obj.alien_files_folder_url(false) : obj.build_relative_path
               else
                 path = getpathforothers(project, obj)
               end
