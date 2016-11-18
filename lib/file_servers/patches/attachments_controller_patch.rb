@@ -190,6 +190,7 @@ module FileServers
               ref = req.split("/")
               logger.debug("Reference Link : #{ref}")
               # logger.error "ref file link for js upload #{ref}."
+              ref.delete("edit") if ref[-1] == 'edit'
 
               # We also only want the url parts that follow .../projects/ if possible.
               # If not, just use the standard split HTTP_REFERER
@@ -198,6 +199,8 @@ module FileServers
 
               # For "Issues", the url is longer than "News" or "Documents"
               klass_idx = (ref.length > 2) ? -2 : -1
+              logger.debug("Reference klass_idx : #{klass_idx}")
+
               klass = ref[klass_idx].singularize.titlecase
               # For attachments in the "File" area, we want to identify
               # as a "Project" since there technically is no "File" container

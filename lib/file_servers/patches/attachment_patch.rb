@@ -240,7 +240,7 @@ module FileServers
                   logger.debug("FILESERVER : After save attachment : File exists on App Server.")
                   #If file exists in the local path then move to ftp.
                   #This happens when calling through API.
-                  context.gproject.file_server.upload_file diskfile, path, ftp_filename
+                  gproject.file_server.upload_file diskfile, path, ftp_filename
                   File.delete(diskfile)
                 else
                   context.move_to_alien_files_folder(ftp_relative_path,path,ftp_filename)
