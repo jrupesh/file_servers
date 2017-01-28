@@ -22,6 +22,7 @@ module FileServers
           alias_method_chain  :delete_from_disk, :ftp
 
           # alias_method_chain  :thumbnail, :esiftp
+          alias_method_chain  :copy, :ftp
 
           cattr_accessor      :context_obj
         end
@@ -63,6 +64,19 @@ module FileServers
       end
 
       module InstanceMethods
+        def copy_with_ftp(attributes=nil)
+          copy = copy_without_ftp
+          copy.is_copy= true
+          copy
+        end
+
+        def is_copy=(arg)
+          @is_copy = arg
+        end
+
+        def is_copy?
+          @is_copy ||= false
+        end
 
         def delete_from_disk_with_ftp
           unless self.file_server.nil?
@@ -223,12 +237,13 @@ module FileServers
 
         def organize_ftp_files
           logger.debug("FILESERVER : organize_ftp_files")
-          return if thumbnail_flag
+          return if thumbnail_flag || is_copy?
           (self.container && !self.container.nil?) ? context = self.container : return
           gproject = get_project
           return if gproject.nil?
 
           if gproject.has_file_server?
+            return if file_server_id.present? && gproject.file_server_id != file_server_id
             logger.debug("FILESERVER : After save attachment : Project has file server.")
             if context.class.name == "Issue"
               path = context.alien_files_folder_url(false)
@@ -248,12 +263,19 @@ module FileServers
               end
             else
               path = getpathforothers(gproject)
+              logger.debug("FILESERVER : After save for non - Issue : #{path} : #{disk_directory}.")
               if disk_directory != path
-                file_server.make_directory path
-                file_server.move_file_to_dir("#{disk_directory}/#{ftp_filename}", "#{path}/#{ftp_filename}")
+                if disk_filename.present? && File.exist?(diskfile)
+                  logger.debug("FILESERVER : After save attachment : File exists on App Server.")
+                  gproject.file_server.upload_file diskfile, path, ftp_filename
+                  File.delete(diskfile)
+                else
+                  gproject.file_server.make_directory path
+                  gproject.file_server.move_file_to_dir("#{disk_directory}/#{ftp_filename}", "#{path}/#{ftp_filename}")
+                end
               end
             end
-            Attachment.where(:id => self.id).update_all(:disk_directory => path) if disk_directory != path
+            Attachment.where(:id => self.id).update_all(:disk_directory => path, :file_server_id => gproject.file_server_id) if disk_directory != path
 
           elsif Setting.plugin_file_servers["organize_uploaded_issue_files"] == "on"
             if context.class.name == "Issue"

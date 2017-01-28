@@ -187,7 +187,7 @@ module FileServers
               Attachment.set_context :class => nil, :project => nil
               # Attachment.set_file_attr_accessible
             else
-              ref = req.split("/")
+              ref = req.gsub(/\?(.*)/, "").split("/")
               logger.debug("Reference Link : #{ref}")
               # logger.error "ref file link for js upload #{ref}."
               ref.delete("edit") if ref[-1] == 'edit'

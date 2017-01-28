@@ -4,7 +4,7 @@ Redmine::Plugin.register :file_servers do
   name 'Project Fileservers plugin'
   author 'Rupesh J'
   description 'This is a plugin for Redmine. Adds a ftp file upload path for each project.'
-  version '3.1.0'
+  version '3.2.0'
   url 'https://github.com/jrupesh/file_servers.git'
 
   menu :admin_menu, :file_servers, {:controller => 'file_servers', :action => 'index'},
