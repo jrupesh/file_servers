@@ -162,7 +162,7 @@ module FileServers
             pid = project.identifier if !project.nil?
           end
 
-          path << project.file_server.root if project.file_server && !project.file_server.root.blank?
+          path << project.file_server.root if project && project.file_server && !project.file_server.root.blank?
           path << pid
           path << ctx if !ctx.nil?
           logger.debug("FILESERVER : get_path_from_context_project PATH #{path}")
@@ -351,6 +351,32 @@ module FileServers
           end
           ret = thumbnail(options)
           ret
+        end
+
+        # If the file is stored locally, it will moved to the ftp server in case the file does not exists in FTP.
+        def organize_disk_file(options={})
+          return false unless File.exist?(diskfile)
+          project = get_project
+          backup_path = options[:backup] || "./tmp"
+          path = context.class.name == "Issue" ? context.alien_files_folder_url(false) : getpathforothers(gproject)
+
+          if self.file_server_id.present? && !ftpfileexists?
+            pre_att = Attachment.where("#{Attachment.table_name}.disk_filename = #{disk_filename} AND #{Attachment.table_name}.id != #{self.id}").order(id: :asc).limit(1)
+            if pre_att && (pre_att.ftpfileexists? || File.exist?(pre_att.diskfile))
+              Attachment.where(:id => self.id).update_all(:disk_directory => pre_att.disk_directory, :file_server_id => pre_att.file_server_id)
+            else
+              logger.info("Fileserver attachemnt : #{self.id} : #{self.diskfile} does not exist.")
+            end
+          elsif self.file_server_id.nil? && File.exist?(diskfile) && project && project.has_file_server?
+            project.file_server.upload_file diskfile, path, ftp_filename
+            Attachment.where(:id => self.id).update_all(:disk_directory => path, :file_server_id => project.file_server_id)
+            self.file_server_id = project.file_server_id
+          end
+          if self.file_server_id.present? && ftpfileexists?
+            FileUtils.mkdir_p(File.dirname(File.join(backup, path))) unless File.exists? File.dirname(File.join(backup, path))
+            FileUtils.copy_entry(diskfile,File.join(backup, path),true)            
+            File.delete(diskfile)
+          end
         end
 
         private

@@ -201,7 +201,7 @@ module FileServers
               klass_idx = (ref.length > 2) ? -2 : -1
               logger.debug("Reference klass_idx : #{klass_idx}")
 
-              klass = ref[klass_idx].singularize.titlecase
+              klass = ref[klass_idx].singularize.camelize
               # For attachments in the "File" area, we want to identify
               # as a "Project" since there technically is no "File" container
               klass = "Project" if klass == "File"

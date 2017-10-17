@@ -120,6 +120,7 @@ END_DESC
 
         if file.file_server_id.present?
           file.save
+          # File.delete(diskfile) if disk_directory == path && gproject.file_server_id.present? && File.exist?(diskfile) && ftpfileexists?
           move_count += 1
         end
       end
