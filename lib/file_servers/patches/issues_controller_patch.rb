@@ -26,9 +26,11 @@ module FileServers
               @attachments_new   = @issue.attachments - @attachments_old
               @attachments_delob = @attachments_old - @issue.attachments
               @attachments_deled = @attachments_delob.map(&:filename)
-              @options           = {}
-              @options.assert_valid_keys(:author, :thumbnails)
-              @options = {:deletable => @issue.attachments_deletable?, :author => true}.merge(@options)
+              @options           = {
+                  :editable => @issue.attachments_editable?,
+                  :deletable => @issue.attachments_deletable?,
+                  :author => true
+              }
             end
             format.html { redirect_to_referer_or issue_path(@issue) }
           end

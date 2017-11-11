@@ -41,7 +41,7 @@ en:
   attach_rescan:  rescan
   attach_browse:  browse
 
-  manually_uploaded: manually uploaded
+  label_manually_uploaded: manually uploaded
   em_selection_on_project_creation: Enable mandatory file server association on Project creation or Update of Project.
   selection_on_project_creation: Mandatory File Server for Projects
 

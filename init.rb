@@ -9,7 +9,7 @@ Redmine::Plugin.register :file_servers do
 
   menu :admin_menu, :file_servers, {:controller => 'file_servers', :action => 'index'},
   		 :caption => :label_file_server_plural, :after => :enumerations,
-       :html => { :style => 'background-image: url(/plugin_assets/file_servers/images/file_servers.png)' }
+       :html => { :class => 'icon', :style => 'background-image: url(/plugin_assets/file_servers/images/file_servers.png)' }
 
 	settings  :default => { 'organize_uploaded_files' => false, 'organize_uploaded_issue_files' => false, 'selection_on_project_creation' => false },
             :partial => 'settings/file_server_settings'

@@ -15,24 +15,34 @@ module FileServers
       	def link_to_attachments_with_ftp(container, options = {})
           options.assert_valid_keys(:author, :thumbnails)
 
-          attachments = container.attachments.preload(:author).to_a
+          attachments = if container.attachments.loaded?
+                          container.attachments
+                        else
+                          container.attachments.preload(:author).to_a
+                        end
+
           s = "".html_safe
 
-          s << render(:partial => 'attachments/ftpscanbrowse', :locals => { :container => container }) if !%w"Message Board".include?( container.class.name )
+          if container.present? && container.respond_to?(:project) &&
+             container.project.file_server.present? && !%w"Message Board".include?( container.class.name )
+
+            s << render(:partial => 'attachments/ftpscanbrowse',
+                :locals => { :container => container, :attachments => attachments })
+          end
 
           if attachments.any?
             options = {
-              :editable => container.attachments_editable?,
-              :deletable => container.attachments_deletable?,
-              :author => true
+                :editable => container.attachments_editable?,
+                :deletable => container.attachments_deletable?,
+                :author => true
             }.merge(options)
             s << render(:partial => 'attachments/links',
-              :locals => {
-                :container => container,
-                :attachments => attachments,
-                :options => options,
-                :thumbnails => (options[:thumbnails] && Setting.thumbnails_enabled?)
-              })
+                        :locals => {
+                       :container => container,
+                       :attachments => attachments,
+                       :options => options,
+                       :thumbnails => (options[:thumbnails] && Setting.thumbnails_enabled?)
+                   })
           end
           s
       	end

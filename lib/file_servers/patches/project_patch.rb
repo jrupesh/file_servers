@@ -19,7 +19,7 @@ module FileServers
       module InstanceMethods
 
         def has_file_server?
-          Setting.plugin_file_servers["organize_uploaded_files"] == "on" && !self.file_server.nil?
+          Setting.plugin_file_servers["organize_uploaded_files"] == "on" && self.file_server.present?
         end
 
         def proj_tree_path

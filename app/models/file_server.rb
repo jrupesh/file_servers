@@ -64,8 +64,7 @@ class FileServer < ActiveRecord::Base
 
     url = []
     if full
-      ftp_credentials = ""
-      ftp_credentials += "ftp://"
+      ftp_credentials = "ftp://"
       if show_credentials
         ftp_credentials += self.login if self.login
         ftp_credentials += ":" + self.password if self.password && self.is_public
@@ -87,7 +86,12 @@ class FileServer < ActiveRecord::Base
     ret = false
     begin
       logger.debug("make_directory Change Directory - #{path}")
-      ftp.chdir path
+      begin
+        ftp.chdir path
+      rescue
+        logger.debug("make_directory Change Directory with / - /#{path}")
+        ftp.chdir "/#{path}"
+      end
       ret = true
     rescue
       begin
@@ -150,7 +154,12 @@ class FileServer < ActiveRecord::Base
     ret = false
     begin
       make_directory(target_directory_path,ftp,false)
-      ftp.chdir target_directory_path
+      begin
+        ftp.chdir target_directory_path
+      rescue
+        logger.debug("upload_file Change Directory with / - /#{target_directory_path}")
+        ftp.chdir "/#{target_directory_path}"
+      end
       ftp.passive = true if is_passive?
       ftp.putbinaryfile source_file_path,target_file_name
       ret = true

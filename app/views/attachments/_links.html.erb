@@ -4,33 +4,40 @@
 <% end %>
 
 <div class="contextual">
-  <%= link_to image_tag('edit.png'),
+  <%= link_to(l(:label_edit_attachments),
         container_attachments_edit_path(container),
-        :title => l(:label_edit_attachments) if options[:editable] %>
+              :title => l(:label_edit_attachments),
+              :class => 'icon-only icon-edit'
+             ) if options[:editable] %>
 </div>
+<table>
 <% for attachment in attachments %>
-<p><%= link_to_attachment attachment, :class => 'icon icon-attachment', :download => true -%>
-  <% if attachment.is_text? %>
-    <%= link_to image_tag('magnifier.png'),
-                :controller => 'attachments', :action => 'show',
-                :id => attachment, :filename => attachment.filename %>
-  <% end %>
-  <%= " - #{attachment.description}" unless attachment.description.blank? %>
-  <span class="size">(<%= Attachment::FOLDER_FILESIZE == attachment.filesize ? l(:label_folder) : number_to_human_size(attachment.filesize) %>)</span>
+<tr>
+  <td>
+    <%= link_to_attachment attachment, class: 'icon icon-attachment' -%>
+    <span class="size">(<%= Attachment::FOLDER_FILESIZE == attachment.filesize ? l(:label_folder) : number_to_human_size(attachment.filesize) %>)</span>
+    <%= link_to_attachment(attachment, class: 'icon-only icon-download', title: l(:button_download), download: true) if attachment.file_server.nil? -%>
+  </td>
+  <td><%= attachment.description unless attachment.description.blank? %></td>
+  <td>
+    <% if options[:author] %>
+      <span class="author"><%= attachment.author %>, <%= format_time(attachment.created_on) %></span>
+    <% end %>
+    <%= " (#{l(:label_manually_uploaded)})" if attachment.author_id == 0 %>
+  </td>
+  <td>
   <% if options[:deletable] %>
-    <%= link_to image_tag('delete.png'), attachment_path(attachment),
+      <%= link_to l(:button_delete), attachment_path(attachment),
                                          :data => {:confirm => l(:text_are_you_sure)},
                                          :method => :delete,
-                                         :class => 'delete',
+                  :class => 'delete icon-only icon-del',
                                          :title => l(:button_delete) %>
   <% end %>
-  <% if options[:author] %>
-    <span class="author"><%= attachment.author %>, <%= format_time(attachment.created_on) %></span>
-  <% end %>
-  <%= " (manually uploaded)" if attachment.author_id == 0 %>
-  <%= image_tag('/plugin_assets/file_servers/images/new.png') if @scan_result && @scan_result[:new].include?(attachment) %>
-  </p>
+  <%= content_tag('span', '' , class: 'icon icon-ftp-attachment') if @scan_result && @scan_result[:new].include?(attachment) %>
+  </td>
+</tr>
 <% end %>
+</table>
 <% if defined?(thumbnails) && thumbnails %>
   <% images = attachments.select(&:thumbnailable?) %>
   <% if images.any? %>

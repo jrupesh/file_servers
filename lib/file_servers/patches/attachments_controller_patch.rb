@@ -115,7 +115,7 @@ module FileServers
                 true ,root_included=true) + "/" + @attachment.disk_filename
 
           if stale?(:etag => @attachment.digest)
-            if request.env['HTTP_USER_AGENT'] =~ /[^\(]*[^\)]Edge\//
+            if @attachment.image?
               # images are sent inline
               send_data @attachment.readftpcontent, :filename => filename_for_content_disposition(@attachment.filename),
                                       :type => detect_content_type(@attachment),
