@@ -1,0 +1,9 @@
+<p><%= @message %><br />
+<% if @url && @title -%>
+<%= link_to @title, @url -%>
+<% elsif @url -%>
+<%= link_to @url  -%>
+<% elsif @title -%>
+<%= content_tag :h1, @title -%>
+<% end %></p>
+

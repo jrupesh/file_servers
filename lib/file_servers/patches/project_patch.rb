@@ -3,7 +3,6 @@ module FileServers
     module ProjectPatch
 
       def self.included(base) # :nodoc:
-        base.extend(ClassMethods)
         base.send(:include, InstanceMethods)
 
         base.class_eval do
@@ -13,11 +12,7 @@ module FileServers
         end
       end
 
-      module ClassMethods
-      end
-
       module InstanceMethods
-
         def has_file_server?
           Setting.plugin_file_servers["organize_uploaded_files"] == "on" && self.file_server.present?
         end

@@ -1,18 +1,17 @@
 <%= stylesheet_link_tag 'fileserverlayout.css', plugin: 'file_servers' %>
 <p>
   <strong><%= l(:attach_files) %></strong> (
-  <% if container.is_a?(Issue) %>
-    <%= container.project.file_server.autoscan ? "" : link_to(l(:attach_rescan), { controller: :issues, action: :scan_files, :id => container }, :method => :post, :remote => true ) + " / "%>
-    <%= link_to(l(:attach_browse), container.alien_files_folder_url(true), :target => "_blank") %>
-  <% else %>
-    <%= container.project.file_server.autoscan ? "" : link_to(l(:attach_rescan), object_scan_attachments_files_path(container.class.name.underscore.pluralize, container.id, :back_url => request.original_url), :method => :patch ) + " / "%>
-    <%= link_to(l(:attach_browse), container.project.file_server.ftpurl_for(Attachment.object_scan_path(container),true,false), :target => "_blank") %>
-  <% end %>
-)</p>
+  <%= if container.project.file_server.autoscan
+        ''
+      else
+        link_to(l(:attach_rescan), scan_files_path(container.class.name.underscore.pluralize, container.id,
+                                                   back_url: request.original_url), method: :patch, remote: true ) + " / "
+      end %>
+  <%= link_to(l(:attach_browse), container.alien_files_folder(true), :target => "_blank") %>
+  )</p>
 <% if attachments && attachments.blank? %>
   <div class="attachments">
     <table>
     </table>
   </div>
 <% end -%>
-

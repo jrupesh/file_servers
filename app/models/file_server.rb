@@ -6,11 +6,12 @@ class FileServer < ActiveRecord::Base
   has_many :attachment, :dependent => :nullify
 
   store :format_store
+  store_accessor :format_store, :sudo_login, :sudo_password
 
   PROTOCOL_FTP = 0
 
   PROTOCOLS = { PROTOCOL_FTP => { :name => "ftp", :label => :label_file_server_ftp, :order => 1}
-          }.freeze
+  }.freeze
 
 
   validates_presence_of :name
@@ -23,8 +24,9 @@ class FileServer < ActiveRecord::Base
   validates_length_of :password, :maximum => 40
   validates_inclusion_of :protocol, :in => PROTOCOLS.keys
 
-  attr_accessible :name, :protocol, :address, :port, :root, :login, :password, :autoscan, :is_public, :project_ids, :ftp_active,
-            :if => lambda {|project, user| user.admin? }
+  attr_accessible :name, :protocol, :address, :port, :root, :login, :password,
+                  :autoscan, :is_public, :project_ids, :ftp_active, :sudo_login,
+                  :sudo_password, :if => lambda {|project, user| user.admin? }
 
   require 'net/ftp'
   require 'stringio'
@@ -61,7 +63,6 @@ class FileServer < ActiveRecord::Base
   end
 
   def ftpurl_for(relative_path,full,root_included=false,show_credentials=true)
-
     url = []
     if full
       ftp_credentials = "ftp://"
@@ -147,7 +148,7 @@ class FileServer < ActiveRecord::Base
     files
   end
 
-  def upload_file(source_file_path, target_directory_path, target_file_name)
+  def upload_file(source_file_path, target_directory_path, target_file_name, ret_filesize=false)
     ftp = ftp_connection
     return if ftp.nil?
     logger.debug("upload_file - #{source_file_path} #{target_directory_path}")
@@ -162,8 +163,9 @@ class FileServer < ActiveRecord::Base
       end
       ftp.passive = true if is_passive?
       ftp.putbinaryfile source_file_path,target_file_name
-      ret = true
+      ret = ret_filesize ? ftp.size(target_file_name) : true
     rescue Exception => e
+      raise "FTP Exception: #{e}" if ret_filesize
       logger.debug("FTP FILESERVER : upload_file - #{e}")
     end
     ftp.close
@@ -171,7 +173,7 @@ class FileServer < ActiveRecord::Base
   end
 
   def delete_file(file_directory, file_name)
-    ftp = ftp_connection
+    ftp = ftp_connection(true)
     return if ftp.nil?
 
     ret = false
@@ -263,28 +265,32 @@ class FileServer < ActiveRecord::Base
   end
 
   private
-    def ftp_connection
-      ftp = nil
+  def ftp_connection(delete=false)
+    ftp = nil
+    begin
+      ftp = Net::FTP.new
       begin
-        ftp = Net::FTP.new
-        begin
-          Timeout.timeout(5) do
-            if self.port.nil?
-              ftp.connect self.address
-            else
-              ftp.connect self.address, self.port
-            end
+        Timeout.timeout(5) do
+          if port.nil?
+            ftp.connect address
+          else
+            ftp.connect address, port
           end
-          resp = ftp.login(self.login, self.decrypted_password)
-          logger.debug("FTP FILESERVER : ftp_connection - #{resp}")
-          ftp.passive = true if is_passive?
-        rescue Timeout::Error => e
-          logger.debug("FTP FILESERVER : ftp_connection - #{e}")
-          ftp = nil
         end
-      rescue
+        resp = if delete && sudo_login.present? && sudo_password.present?
+                 ftp.login(sudo_login, sudo_password)
+               else
+                 ftp.login(login, decrypted_password)
+               end
+        logger.debug("FTP FILESERVER : ftp_connection - #{resp}")
+        ftp.passive = true if is_passive?
+      rescue Timeout::Error => e
+        logger.debug("FTP FILESERVER : ftp_connection - #{e}")
         ftp = nil
       end
-      ftp
+    rescue
+      ftp = nil
     end
+    ftp
+  end
 end

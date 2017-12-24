@@ -2,7 +2,7 @@
   <td>
     <%= link_to_attachment attachment, class: 'icon icon-attachment' -%>
     <span class="size">(<%= Attachment::FOLDER_FILESIZE == attachment.filesize ? l(:label_folder) : number_to_human_size(attachment.filesize) %>)</span>
-    <%= link_to_attachment(attachment, class: 'icon-only icon-download', title: l(:button_download), download: true) if attachment.file_server.nil?  -%>
+    <%= link_to_attachment(attachment, class: 'icon-only icon-download', title: l(:button_download), download: true) -%>
   </td>
   <td><%= attachment.description unless attachment.description.blank? %></td>
   <td>

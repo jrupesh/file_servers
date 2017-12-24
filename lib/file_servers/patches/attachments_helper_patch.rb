@@ -12,7 +12,7 @@ module FileServers
       end
 
       module InstanceMethods
-      	def link_to_attachments_with_ftp(container, options = {})
+        def link_to_attachments_with_ftp(container, options = {})
           options.assert_valid_keys(:author, :thumbnails)
 
           attachments = if container.attachments.loaded?
@@ -21,13 +21,13 @@ module FileServers
                           container.attachments.preload(:author).to_a
                         end
 
-          s = "".html_safe
+          s = ''.html_safe
 
           if container.present? && container.respond_to?(:project) &&
-             container.project.file_server.present? && !%w"Message Board".include?( container.class.name )
+              container.project.file_server.present? && !%w"Message Board".include?( container.class.name )
 
             s << render(:partial => 'attachments/ftpscanbrowse',
-                :locals => { :container => container, :attachments => attachments })
+                        :locals => { :container => container, :attachments => attachments })
           end
 
           if attachments.any?
@@ -38,14 +38,14 @@ module FileServers
             }.merge(options)
             s << render(:partial => 'attachments/links',
                         :locals => {
-                       :container => container,
-                       :attachments => attachments,
-                       :options => options,
-                       :thumbnails => (options[:thumbnails] && Setting.thumbnails_enabled?)
-                   })
+                            :container => container,
+                            :attachments => attachments,
+                            :options => options,
+                            :thumbnails => (options[:thumbnails] && Setting.thumbnails_enabled?)
+                        })
           end
           s
-      	end
+        end
       end
     end
   end

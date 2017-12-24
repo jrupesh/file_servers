@@ -7,6 +7,8 @@ en:
   field_port: Port
   field_autoscan: Automatic scan
   field_ftp_active: Active transfer mode
+  field_sudo_login: Login used for deleting file
+  field_sudo_password: User password for deletion
 
   label_loc_backup_path: File backup path
   em_loc_backup_path: "For specific cases (diff, images for Edge browsers), Files are stored on Server. Cleanup files hyperlink on file server page clears locally downloaded files. A backup is taken if the file does not exist on the FTP folder."
@@ -48,3 +50,7 @@ en:
   error_file_server_scan: FTP Server scan failed.
   success_file_server_scan: FTP Server scan completed.
   label_folder: Folder
+
+  label_ftp_upload: 'FILESERVER FAILURE/ERROR'
+  label_ftp_upload_failure: Ftp upload job failure notice.
+  label_ftp_upload_error: An error occured in FTP upload.

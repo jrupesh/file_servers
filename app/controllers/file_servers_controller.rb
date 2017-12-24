@@ -54,6 +54,9 @@ class FileServersController < ApplicationController
 
   private
   def file_server_params
-    params.require(:file_server).permit(:name, :protocol, :address, :port, :root, :login, :password, :autoscan, :is_public, :project_ids)
+    params.require(:file_server).permit(:name, :protocol, :address, :port,
+                                        :root, :login, :password, :autoscan,
+                                        :is_public, :project_ids, :sudo_login,
+                                        :sudo_password)
   end
 end
