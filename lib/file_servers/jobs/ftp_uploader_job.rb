@@ -18,7 +18,7 @@ module FileServers
         # if same size,
         #     mark complete
         #       -> Update file server, and the disk path info.
-        attachment.update_attributes!(file_server_id: file_server.id,
+        attachment.update_columns(file_server_id: file_server.id,
                                       disk_directory: ftp_file_path)
         #     else raise error. : Done in error method.
         #       -> Send mail to admin and the author on failure of upload.
